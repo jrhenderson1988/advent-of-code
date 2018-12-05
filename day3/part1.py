@@ -1,4 +1,4 @@
-from common import load_input
+from loader import load_input
 from .Grid import Grid
 from .Claim import Claim
 import os

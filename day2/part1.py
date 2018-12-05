@@ -1,5 +1,5 @@
 from day2.common import exactly_x, get_occurrences
-from common import load_input
+from loader import load_input
 import os
 
 

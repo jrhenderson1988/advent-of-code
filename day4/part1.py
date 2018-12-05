@@ -1,5 +1,5 @@
 from loader import load_input
-from day4.common import GuardShift, Event
+from .common import GuardShift, Event
 import os
 
 
