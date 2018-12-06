@@ -1,4 +1,5 @@
 import sys
+import time
 from importlib import import_module
 
 if __name__ == '__main__':
@@ -8,6 +9,9 @@ if __name__ == '__main__':
 
     module = args[1] + '.' + args[2]
     part = import_module(module)
+
+    start = time.time()
     print(part.run())
+    print('Execution finished in %fs' % (time.time() - start))
 
 
