@@ -1,7 +1,6 @@
 from .common import load_points
 from loader import load_input
 import os
-import pdb
 
 
 def distance(x1, y1, x2, y2):
