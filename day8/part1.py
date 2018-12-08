@@ -28,16 +28,18 @@ class Node:
     def load_children(data: list, num_children: int):
         nodes = []
 
-        for i in range(0, num_children):
+        for _ in range(num_children):
             children = data[0]
             metadata = data[1]
 
             if children == 0:
-                nodes.append(Node([], data[2:2 + metadata]))
+                node = Node([], data[2:2 + metadata])
+                nodes.append(node)
                 data = data[2 + metadata:]
             else:
                 grandchildren, data = Node.load_children(data[2:], children)
                 child = Node(grandchildren, data[:metadata])
+                data = data[metadata:]
                 nodes.append(child)
 
         return nodes, data
@@ -54,11 +56,7 @@ class Node:
 
 def run():
     data = [int(d) for d in load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt')).split(' ')]
-    # data = [1, 1, 0, 2, 3, 6, 99]
-    # data = [2, 1, 0, 2, 3, 6, 0, 1, 56, 99]
-    # data = [0, 2, 3, 6]
 
     tree = Node.load(data)
-    print(tree)
 
     return tree.calculate_checksum()
