@@ -26,15 +26,12 @@ class Node:
 
         value = 0
         for meta in self.metadata:
-            if meta < 1:
+            if meta < 1 or meta > len(self.children):
                 continue
 
-            if len(self.children) <= meta:
-                value += self.children[meta - 1].calculate_value()
+            value += self.children[meta - 1].calculate_value()
 
         return value
-            
-        
 
     @staticmethod
     def load_children(data: list, num_children: int):
