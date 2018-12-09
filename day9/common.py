@@ -1,5 +1,6 @@
 from re import compile
 
+
 class Game:
     def __init__(self, num_players: int, last_marble_value: int):
         self.scores = {i: 0 for i in range(num_players)}
@@ -75,10 +76,10 @@ class Game:
         return self.__repr__()
 
     @staticmethod
-    def parse(data):
+    def parse(data, last_marble_multiplier=1):
         pattern = compile(r'(?P<players>\d+) players; last marble is worth (?P<points>\d+) points')
         match = pattern.match(data)
         if not match:
             raise ValueError('Invalid data provided')
 
-        return Game(int(match.group('players')), int(match.group('points')))
+        return Game(int(match.group('players')), int(match.group('points')) * last_marble_multiplier)
