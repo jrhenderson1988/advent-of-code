@@ -1,63 +1,29 @@
-from re import compile
-
-
 class Game:
     def __init__(self, num_players: int, last_marble_value: int):
+        self.num_players = num_players
         self.scores = {i: 0 for i in range(num_players)}
         self.next_player = 0
-        self.last_marble_value = last_marble_value
         self.next_marble = 1
-        self.marbles = [0]
-        self.current_position = 0
+        self.last_marble_value = last_marble_value
+        self.head = Marble(None, 0)
+        self.current = self.head
+        self.size = 1
+        self.played = False
 
-    def play(self):
-        while not self.is_game_over():
-            marble = self.get_next_marble()
-            player = self.get_next_player()
-            position = self.get_next_position()
-
-            if self.is_special_marble(marble):
-                self.score(player, marble)
-            else:
-                self.place_marble_at_position(marble, position)
-
-    def get_next_position(self):
-        total_marbles = len(self.marbles)
-        if total_marbles < 2:
-            return 1
-
-        index = self.current_position + 2
-        if index > total_marbles:
-            index = index % total_marbles
-
-        return index
-
-    def get_next_player(self):
-        next_player = self.next_player
-        num_players = len(self.scores)
-        self.next_player = (next_player + 1) % num_players
-
-        return next_player
+    @staticmethod
+    def is_special_marble(marble):
+        return marble.value % 23 == 0
 
     def is_game_over(self):
         return self.next_marble > self.last_marble_value
 
-    @staticmethod
-    def is_special_marble(marble):
-        return marble % 23 == 0
+    def get_next_player(self):
+        next_player = self.next_player
+        self.next_player = (next_player + 1) % self.num_players
 
-    def place_marble_at_position(self, marble, position):
-        self.marbles = self.marbles[:position] + [marble] + self.marbles[position:]
-        self.current_position = position
+        return next_player
 
-    def score(self, player, marble):
-        target_position = (self.current_position - 7) % len(self.marbles)
-        target_marble = self.marbles[target_position]
-        self.scores[player] += marble + target_marble
-        self.marbles = self.marbles[:target_position] + self.marbles[target_position + 1:]
-        self.current_position = target_position
-
-    def get_next_marble(self):
+    def get_next_marble_value(self):
         next_marble = self.next_marble
         self.next_marble += 1
 
@@ -69,17 +35,52 @@ class Game:
 
         return max([score for score in self.scores.values()])
 
+    def play(self):
+        while not self.is_game_over():
+            player = self.get_next_player()
+            marble = self.get_next_marble_value()
+
+            self.take_turn(player, marble)
+
+    def take_turn(self, player: int, value: int):
+        marble = Marble(player, value)
+        if self.is_special_marble(marble):
+            self.scoring_turn(marble)
+        else:
+            self.standard_turn(marble)
+
+    def scoring_turn(self, marble):
+        target = self.current.previous.previous.previous.previous.previous.previous.previous
+        self.scores[marble.player] += marble.value + target.value
+        before = target.previous
+        after = target.next
+        before.next = after
+        after.previous = before
+        self.current = after
+
+    def standard_turn(self, marble):
+        before = self.current.next
+        after = self.current.next.next
+        before.next = marble
+        after.previous = marble
+        marble.previous = before
+        marble.next = after
+        self.current = marble
+        self.size += 1
+
     def __repr__(self):
-        return ', '.join([('(%d)' % m) if i == self.current_position else str(m) for i, m in enumerate(self.marbles)])
+        s = '['
+        marble = self.head
+        for i in range(self.size):
+            s += ('(%d)' if marble is self.current else '%d') % marble.value + ', '
+            marble = marble.next
 
-    def __str__(self):
-        return self.__repr__()
+        return s + ']'
 
-    @staticmethod
-    def parse(data, last_marble_multiplier=1):
-        pattern = compile(r'(?P<players>\d+) players; last marble is worth (?P<points>\d+) points')
-        match = pattern.match(data)
-        if not match:
-            raise ValueError('Invalid data provided')
 
-        return Game(int(match.group('players')), int(match.group('points')) * last_marble_multiplier)
+class Marble:
+    def __init__(self, player, value: int):
+        self.player = player
+        self.value = value
+        self.previous = self
+        self.next = self
