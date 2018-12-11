@@ -10,7 +10,6 @@ class Grid:
 
         return self.get_hundreds_digit(((rack_id * y) + self.serial_number) * rack_id) - 5
 
-    @staticmethod
     def summed_area(self, x, y):
         return self.grid[x][y] + self.grid[x][y - 1] + self.grid[x - 1][y] - self.grid[x - 1][y - 1]
 
