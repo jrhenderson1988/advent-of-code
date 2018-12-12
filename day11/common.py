@@ -3,7 +3,7 @@ class Grid:
         self.size = grid_size
         self.serial_number = serial_number
         self.grid = {}
-        self.sat = {}
+        self.summed_area_table = {}
 
     def power_level(self, x, y):
         rack_id = x + 10
@@ -12,6 +12,12 @@ class Grid:
 
     def summed_area(self, x, y):
         return self.grid[x][y] + self.grid[x][y - 1] + self.grid[x - 1][y] - self.grid[x - 1][y - 1]
+
+    def calculate_area(self, x, y, s):
+        return self.summed_area_table[x][y] + \
+               self.summed_area_table[x + s][y + s] - \
+               self.summed_area_table[x + s][y] - \
+               self.summed_area_table[x][y + s]
 
     @staticmethod
     def get_hundreds_digit(number):
@@ -25,8 +31,9 @@ class Grid:
         return '%d,%d' % (x, y)
 
     def compute_grid(self):
-        self.grid = {x: {y: self.power_level(x, y) for y in range(1, self.size + 1)} for x in range(1, self.size + 1)}
-        self.sat = {x: {y: self.summed_area(x, y) for y in range(2, self.size)} for x in range(2, self.size)}
+        s = self.size
+        self.grid = {x: {y: self.power_level(x, y) for y in range(1, s + 1)} for x in range(1, s + 1)}
+        self.summed_area_table = {x: {y: self.summed_area(x, y) for y in range(2, s)} for x in range(2, s)}
 
     def largest_power_grid(self, grid_size):
         self.compute_grid()
@@ -34,15 +41,24 @@ class Grid:
         largest = None
         for x in range(1, self.size - (grid_size - 2)):
             for y in range(1, self.size - (grid_size - 2)):
-                total = 0
-                for i in range(grid_size):
-                    for j in range(grid_size):
-                        total += self.grid[x + i][y + j]
-
+                total = self.calculate_area(x, y, grid_size)
                 if largest is None or total > largest[2]:
                     largest = (x, y, total)
 
         return largest
+
+        # largest = None
+        # for x in range(1, self.size - (grid_size - 2)):
+        #     for y in range(1, self.size - (grid_size - 2)):
+        #         total = 0
+        #         for i in range(grid_size):
+        #             for j in range(grid_size):
+        #                 total += self.grid[x + i][y + j]
+        #
+        #         if largest is None or total > largest[2]:
+        #             largest = (x, y, total)
+        #
+        # return largest
 
     def largest_power_square(self):
         self.compute_grid()
