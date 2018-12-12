@@ -3,9 +3,10 @@ import re
 
 class State:
     def __init__(self, initial_state: str):
-        self.state = [v == '#' for v in initial_state]
+        self.state, self.start = self.trim_state([v == '#' for v in initial_state], 0)
+        self.generations = 0
         self.initial_state = self.state
-        self.start = 0
+        self.initial_start = self.start
 
     @staticmethod
     def load(lines):
@@ -29,9 +30,26 @@ class State:
 
         return partial_state
 
-    def generate(self, matcher):
-        print('B: %s -> %d' % (str(self), self.start))
+    @staticmethod
+    def trim_state(state: list, start: int):
+        from_beginning = 0
+        from_end = 0
 
+        for i in range(0, 0 - start):
+            if state[i] is False:
+                from_beginning += 1
+            else:
+                break
+
+        for i in range(len(state) - 1, 0, -1):
+            if state[i] is False:
+                from_end += 1
+            else:
+                break
+
+        return state[from_beginning:-from_end] if from_end > 0 else state[from_beginning:], start + from_beginning
+
+    def generate(self, matcher):
         state = [False, False] + self.state + [False, False]
         start = self.start - 2
 
@@ -42,13 +60,16 @@ class State:
                 start += 1
                 state = state[1:]
 
-        self.state = state
-        self.start = start
-
-        print('A: %s -> %d' % (str(self), self.start))
+        self.state, self.start = self.trim_state(state, start)
+        self.generations += 1
 
     def apply_generations(self, n, matcher):
-        for _ in range(n):
+        for i in range(n):
+            # TODO - The difference between previous and next scores eventually evens out to be the same (186)
+            # record the previous X scores until the differences start out being the same, then use that to work out
+            # the value for higher generation numbers...
+            if self.state == self.initial_state and self.initial_state == self.initial_start:
+                print('Initial state seen again at: %d' % i)
             self.generate(matcher)
 
     def get_score(self):
@@ -60,7 +81,10 @@ class State:
         return score
 
     def __repr__(self):
-        return ''.join('#' if v is True else '.' for v in self.state)
+        pattern = ''.join('#' if v is True else '.' for v in self.state)
+        length = len(self.state)
+        score = self.get_score()
+        return '(%d generations, %d length, %d score) %s' % (self.generations, length, score, pattern)
 
 
 class Matcher:
