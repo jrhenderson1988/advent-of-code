@@ -1,25 +1,24 @@
 import re
 
 
-class State:
-    def __init__(self, initial_state: str):
-        self.state, self.start = self.trim_state([v == '#' for v in initial_state], 0)
-        self.generations = 0
-        self.initial_state = self.state
-        self.initial_start = self.start
+class PlantSimulator:
+    def __init__(self, state: str, matcher, repeated_difference_threshold=10):
+        self.state, self.start = self.trim_state([v == '#' for v in state], 0)
+        self.matcher = matcher
+        self.repeated_difference_threshold = repeated_difference_threshold
 
     @staticmethod
-    def load(lines):
+    def load(lines, matcher):
         start = 'initial state:'
         if not lines[0].startswith(start):
             raise ValueError('Could not load initial state')
 
-        initial_state = lines[0][len(start):].strip()
+        state = lines[0][len(start):].strip()
 
-        return State(initial_state)
+        return PlantSimulator(state, matcher)
 
     @staticmethod
-    def get_partial_state(i, state):
+    def get_partial_state(i: int, state: list):
         partial_state = []
         length = len(state)
         for j in range(i - 2, i + 3):
@@ -49,42 +48,56 @@ class State:
 
         return state[from_beginning:-from_end] if from_end > 0 else state[from_beginning:], start + from_beginning
 
-    def generate(self, matcher):
-        state = [False, False] + self.state + [False, False]
-        start = self.start - 2
+    @staticmethod
+    def calculate_score(state: list, start: int):
+        score = 0
+        for i in range(len(state)):
+            if state[i]:
+                score += start + i
 
-        state = [matcher.matches(self.get_partial_state(i, state)) for i in range(len(state))]
+        return score
+
+    @staticmethod
+    def calculate_advanced_score(curr_score: int, curr_generation: int, difference: int, target_generation: int):
+        return curr_score + ((target_generation - curr_generation) * difference)
+
+    def generate(self, state: list, start: int):
+        state = [False, False] + state + [False, False]
+        start = start - 2
+
+        state = [self.matcher.matches(PlantSimulator.get_partial_state(i, state)) for i in range(len(state))]
 
         for i in range(2):
             if state[0] is False:
                 start += 1
                 state = state[1:]
 
-        self.state, self.start = self.trim_state(state, start)
-        self.generations += 1
+        return PlantSimulator.trim_state(state, start)
 
-    def apply_generations(self, n, matcher):
-        for i in range(n):
-            # TODO - The difference between previous and next scores eventually evens out to be the same (186)
-            # record the previous X scores until the differences start out being the same, then use that to work out
-            # the value for higher generation numbers...
-            if self.state == self.initial_state and self.initial_state == self.initial_start:
-                print('Initial state seen again at: %d' % i)
-            self.generate(matcher)
+    def get_score(self, num_generations):
+        state = self.state
+        start = self.start
 
-    def get_score(self):
-        score = 0
-        for i in range(len(self.state)):
-            if self.state[i]:
-                score += self.start + i
+        prev_score = self.calculate_score(state, start)
+        prev_diff = prev_score
+        occurrences = 1
 
-        return score
+        for i in range(num_generations):
+            state, start = self.generate(state, start)
+            curr_score = self.calculate_score(state, start)
+            curr_diff = curr_score - prev_score
+            if prev_diff == curr_diff:
+                occurrences += 1
+            else:
+                prev_diff = curr_diff
+                occurrences = 1
 
-    def __repr__(self):
-        pattern = ''.join('#' if v is True else '.' for v in self.state)
-        length = len(self.state)
-        score = self.get_score()
-        return '(%d generations, %d length, %d score) %s' % (self.generations, length, score, pattern)
+            if occurrences > self.repeated_difference_threshold:
+                return self.calculate_advanced_score(curr_score, i + 1, curr_diff, num_generations)
+
+            prev_score = curr_score
+
+        return prev_score
 
 
 class Matcher:
