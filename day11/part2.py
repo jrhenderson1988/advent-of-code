@@ -6,6 +6,6 @@ import os
 def run():
     serial_number = int(load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt')))
 
-    grid = Grid(serial_number, grid_size=10)
+    grid = Grid(serial_number)
 
-    # return grid.largest_power_square()
+    return '(%d, %d, %d) = %d' % grid.largest_power_square()
