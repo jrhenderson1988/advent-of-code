@@ -8,4 +8,4 @@ def run():
 
     grid = Grid(serial_number)
 
-    return grid.largest_power_square()
+    return '(%d, %d, %d) = %d' % grid.largest_power_square()
