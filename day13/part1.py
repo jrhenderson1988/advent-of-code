@@ -1,128 +1,101 @@
 from loader import load_input_as_string
+from .common import Track
 import os
-
-
-class Track:
-    HORIZONTAL = 1
-    VERTICAL = 2
-    CORNER_A = 3
-    CORNER_B = 4
-    CROSSROAD = 5
-
-    DIRECTION_MAP = {
-        '-': HORIZONTAL,
-        '|': VERTICAL,
-        '/': CORNER_A,
-        '\\': CORNER_B,
-        '+': CROSSROAD
-    }
-
-    def __init__(self, track, carts):
-        self.track = track
-        self.carts = carts
-
-    def __repr__(self):
-        s = ''
-
-        carts = {}
-        for cart in self.carts:
-            carts[cart.y][cart.x] = str(cart)
-
-        for y in range(len(self.track)):
-            for x in range(len(self.track[y])):
-                if y in carts and x in carts[y]:
-                    s += carts[y][x]
-                s += self.track[y][x] if self.track[y][x] is not None else ' '
-            s += '\n'
-
-        return s
-
-    @staticmethod
-    def parse(data: str):
-        rows = data.split('\n')
-        row_length = max(len(row) for row in rows)
-
-        carts = []
-        track = [[None] * row_length for _ in range(len(rows))]
-        for y in range(len(rows)):
-            length = len(rows[y])
-            for x in range(row_length):
-                cell = None if x >= length or rows[y][x] is None else rows[y][x]
-                if Cart.is_cart(cell):
-                    cart = Cart.parse(x, y, cell)
-                    carts.append(cart)
-                    cell = '-' if cart.is_horizontal() else '|'
-
-                track[y][x] = cell
-
-        return Track(track, carts)
-
-    def is_horizontal(self, x, y):
-        return self.track[y][x] == '-'
-
-    def is_vertical(self, x, y):
-        return self.track[y][x] == '|'
-
-    def is_crossroad(self, x, y):
-        return self.track[y][x] == '+'
-
-    def is_corner(self, x, y):
-        return self.track[y][x] == '/' or self.track[y][x] == '\\'
-
-    @staticmethod
-    def parse_cell(cell):
-        return None if cell == ' ' else cell
-
-
-class Cart:
-    UP = 1
-    DOWN = 2
-    RIGHT = 3
-    LEFT = 4
-
-    DIRECTION_MAP = {
-        '^': UP,
-        'v': DOWN,
-        '>': RIGHT,
-        '<': LEFT
-    }
-
-    def __init__(self, x: int, y: int, direction: int):
-        self.x = x
-        self.y = y
-        self.direction = direction
-
-    def __repr__(self):
-        return
-
-    def is_left(self):
-        return self.direction == Cart.LEFT
-
-    def is_right(self):
-        return self.direction == Cart.RIGHT
-
-    def is_up(self):
-        return self.direction == Cart.UP
-
-    def is_down(self):
-        return self.direction == Cart.DOWN
-
-    def is_horizontal(self):
-        return self.is_left() or self.is_right()
-
-    def is_vertical(self):
-        return self.is_up() or self.is_down()
-
-    @staticmethod
-    def parse(x, y, d):
-        return Cart(x, y, Cart.DIRECTION_MAP[d])
-
-    @staticmethod
-    def is_cart(c):
-        return c in Cart.DIRECTION_MAP
 
 
 def run():
     track = Track.parse(load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt')))
-    print(track)
-    return 'Day 13 Part 1'
+
+    return track.find_first_collision()
+
+# class Cart:
+#     def __init__(self, x, y, direction, next_turn):
+#         self.x = x
+#         self.y = y
+#         self.dir = direction
+#         self.next_turn = next_turn
+#
+#     def __str__(self):
+#         return "({},{},{},{})".format(self.x, self.y, self.dir, self.next_turn)
+#
+#
+# def run():
+#     from loader import load_input_as_string
+#     import os
+#
+#     s = load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt'))
+#     lines = s.splitlines()
+#     world = []
+#     carts = []
+#     rail_chars = "|\\/+-"
+#     char_to_int = {" ": 0}
+#     char_to_int.update({char: 1 for char in rail_chars})
+#     char_to_int.update(
+#         {
+#             "|": 1,
+#             "\\": 2,
+#             "/": 3,
+#             "+": 4,
+#             "-": 5,
+#             "v": 11,
+#             "<": 15,
+#             "^": 11,
+#             ">": 15,
+#         }
+#     )
+#     cart_char_to_dir = {"v": 3, "<": 0, "^": 1, ">": 2}
+#     for y in range(len(lines)):
+#         row = []
+#         for x in range(len(lines[y])):
+#             char = lines[y][x]
+#             row.append(char_to_int[char])
+#             if char in cart_char_to_dir.keys():
+#                 carts.append(Cart(x, y, cart_char_to_dir[char], 0))
+#         world.append(row)
+#
+#     while True:
+#         carts.sort(key=lambda cart: (cart.y, cart.x))
+#         for cart in carts:
+#             x, y = cart.x, cart.y
+#
+#             if world[y][x] % 10 == 2:
+#                 if cart.dir == 0:
+#                     cart.dir = 1
+#                 elif cart.dir == 1:
+#                     cart.dir = 0
+#                 elif cart.dir == 2:
+#                     cart.dir = 3
+#                 elif cart.dir == 3:
+#                     cart.dir = 2
+#
+#             if world[y][x] % 10 == 3:
+#                 if cart.dir == 0:
+#                     cart.dir = 3
+#                 elif cart.dir == 1:
+#                     cart.dir = 2
+#                 elif cart.dir == 2:
+#                     cart.dir = 1
+#                 elif cart.dir == 3:
+#                     cart.dir = 0
+#
+#             if world[y][x] % 10 == 4:
+#                 if cart.next_turn == 0:
+#                     cart.dir = (cart.dir - 1) % 4
+#                 elif cart.next_turn == 2:
+#                     cart.dir = (cart.dir + 1) % 4
+#                 cart.next_turn = (cart.next_turn + 1) % 3
+#
+#             if cart.dir == 0:
+#                 cart.x -= 1
+#             elif cart.dir == 1:
+#                 cart.y -= 1
+#             elif cart.dir == 2:
+#                 cart.x += 1
+#             elif cart.dir == 3:
+#                 cart.y += 1
+#
+#             if world[cart.y][cart.x] >= 10:
+#                 return "{},{}".format(cart.x, cart.y)
+#
+#             world[y][x] -= 10
+#             world[cart.y][cart.x] += 10
