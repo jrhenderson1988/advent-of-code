@@ -1,4 +1,13 @@
-from operator import attrgetter
+class Collision:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def __repr__(self):
+        return 'Collision: %s, %s' % (self.a, self.b)
+
+    def get_position(self):
+        return self.a.x, self.a.y
 
 
 class Track:
@@ -94,18 +103,25 @@ class Track:
         return self.is_corner_a(x, y) or self.is_corner_b(x, y)
 
     def advance(self):
-        carts = sorted(self.carts, key=lambda c: (c.y, c.x))
+        carts = [cart for cart in sorted(self.carts, key=lambda c: (c.y, c.x))]
         collisions = []
-        for index, cart in enumerate(carts):
+        crashed = []
+        for cart in carts:
+            if cart.identifier in crashed:
+                continue
+
             cart.tick(self)
 
-            other_positions = [(c.x, c.y) for c in carts if c.identifier != cart.identifier]
-            if (cart.x, cart.y) in other_positions:
-                collisions.append((cart.x, cart.y))
+            others = [other for other in carts if other.identifier != cart.identifier and other.identifier not in crashed]
+            for other in others:
+                if (other.x, other.y) == (cart.x, cart.y):
+                    crashed.append(cart.identifier)
+                    crashed.append(other.identifier)
+                    collisions.append(Collision(cart, other))
+            
+        self.carts = [cart for cart in carts if cart.identifier not in crashed]
 
-            carts[index] = cart
-
-        self.carts = carts
+        # print(len(self.carts))
 
         return collisions
 
@@ -113,7 +129,16 @@ class Track:
         while True:
             collisions = self.advance()
             if len(collisions) > 0:
-                return collisions[0]
+                return collisions[0].get_position()
+
+    def find_last_cart(self):
+        while len(self.carts) > 1:
+            self.advance()
+
+        if len(self.carts) == 1:
+            return self.carts[0].x, self.carts[0].y
+
+        return 'No carts remaining'
 
 
 class Cart:
