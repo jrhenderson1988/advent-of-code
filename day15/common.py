@@ -55,6 +55,9 @@ class Unit:
     def is_enemy(self, other):
         return self.race != other.race
 
+    def is_alive(self):
+        return self.hp > 0
+
     @staticmethod
     def is_unit_symbol(symbol):
         return symbol in Unit.SYMBOL_MAP
@@ -78,13 +81,13 @@ class Unit:
 class Zone:
     def __init__(self, zone: list, units: list):
         self.zone = zone
-        self.units = units
+        self.units = {str(uuid.uuid4()): u for u in units}
         self.battle_over = False
 
     def __repr__(self):
         s = ''
 
-        units = {u.point: u.get_symbol() for u in self.units}
+        units = {u.point: u.get_symbol() for u in self.living_units().values()}
         for y in range(max([point.y for point in self.zone]) + 2):
             for x in range(max([point.x for point in self.zone]) + 2):
                 p = Point(x, y)
@@ -93,25 +96,25 @@ class Zone:
 
         return s
 
+    def living_units(self):
+        return {k: u for k, u in self.units.items() if u.is_alive()}
+
     def is_open(self, p: Point):
-        return p in self.zone and p not in [u.point for u in self.units]
+        return p in self.zone and p not in [u.point for u in self.living_units().values()]
 
     def get_open_neighbours(self, p: Point):
-        return [pt for pt in self.get_neighbours(p) if self.is_open(pt)]
+        return [pt for pt in self.get_adjacent_points(p) if self.is_open(pt)]
 
     @staticmethod
-    def get_neighbours(p: Point):
+    def get_adjacent_points(p: Point):
         return [Point(p.x, p.y - 1), Point(p.x - 1, p.y), Point(p.x + 1, p.y), Point(p.x, p.y + 1)]
 
     def get_enemies_of(self, unit: Unit):
-        return [u for u in self.units if unit.is_enemy(u)]
-
-    def get_nearby_enemies_of(self, unit: Unit):
-        return [u for u in self.get_enemies_of(unit) if u.point in self.get_neighbours(unit.point)]
+        return {k: u for k, u in self.living_units().items() if unit.is_enemy(u)}
 
     def find_next_move(self, unit: Unit):
         enemies = self.get_enemies_of(unit)
-        targets = [p for e in enemies for p in self.get_neighbours(e.point)]
+        targets = [p for e in enemies.values() for p in self.get_adjacent_points(e.point)]
         if unit.point in targets:
             return None
 
@@ -139,52 +142,39 @@ class Zone:
 
         return None
 
-    def attack_nearby_enemies(self, unit: Unit):
-        nearby_enemies = self.get_nearby_enemies_of(unit)
+    def select_target(self, unit: Unit):
+        enemies = self.get_enemies_of(unit)
+        nearby_enemies = {k: u for k, u in enemies.items() if u.point in self.get_adjacent_points(unit.point)}
         if len(nearby_enemies) > 0:
-            most_vulnerable_nearby_enemy = min(nearby_enemies, key=lambda e: e.hp)
-            # TODO - Attack the enemy (Re-jig the units so they can be identified with a key to perform updates)
-            print(unit, most_vulnerable_nearby_enemy)
-
-        # print(
-        #     '%s@%d,%d' % (unit.get_symbol(), unit.point.x, unit.point.y),
-        #     ' -> ',
-        #     ['%s@%d,%d' % (u.get_symbol(), u.point.x, u.point.y) for u in nearby_enemies]
-        # )
-
-        # If there are any enemies located within the given unit's neighbour squares
-        # The lowest HP unit is selected to be attacked
-        # the target enemy receives a blow, losing HP equivalent to the unit's AP
+            return min(nearby_enemies.keys(), key=lambda k: nearby_enemies[k].hp)
 
     def round(self):
-        # TODO -> Ensure that we mark the battle as over and return when there are no enemy units left
-        self.units = sorted(self.units, key=lambda u: u.point)
-        for index, unit in enumerate(self.units):
-            next_move = self.find_next_move(unit)
+        living_units = self.living_units()
+        for key in sorted(living_units.keys(), key=lambda k: living_units[k].point):
+            if not self.units[key].is_alive():
+                continue
+
+            if len(self.get_enemies_of(self.units[key])) == 0:
+                self.battle_over = True
+                return False
+
+            next_move = self.find_next_move(self.units[key])
             if next_move is not None:
-                self.units[index].point = next_move
+                self.units[key].point = next_move
 
-            self.attack_nearby_enemies(unit)
+            target_key = self.select_target(self.units[key])
+            if target_key is not None:
+                self.units[target_key].hp -= self.units[key].ap
 
-
-        # Sort the units into reading order
-        # Run through each unit in the correct order
-        # - Identify all of the enemy targets - If there are no enemy targets, the battle is over.
-        # - If there are enemy targets, their adjacent squares are identified and the distance to each is calculated
-        # -
+        return True
 
     def get_outcome(self):
         rounds = 0
         while not self.battle_over:
-            self.round()
-            rounds += 1
+            if self.round():
+                rounds += 1
 
-            if rounds > 4:
-                self.battle_over = True
-
-            print(self)
-
-        return sum(unit.hp for unit in self.units) * rounds
+        return sum(unit.hp for unit in self.living_units().values()) * rounds
 
     @staticmethod
     def parse(data: str):

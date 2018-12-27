@@ -6,8 +6,6 @@ import os
 def run():
     zone = Zone.parse(load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt')))
 
-    print(zone)
-
     return zone.get_outcome()
 
 # from collections import deque
