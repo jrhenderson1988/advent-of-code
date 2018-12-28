@@ -1,4 +1,4 @@
-from day2.common import exactly_x, get_occurrences
+from day02.common import exactly_x, get_occurrences
 from loader import load_input
 import os
 
