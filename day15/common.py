@@ -1,5 +1,6 @@
 from collections import deque
 import uuid
+import copy
 
 
 class Unit:
@@ -52,16 +53,16 @@ class Zone:
     def __init__(self, zone: list, units: list):
         self.zone = zone
         self.initial_units = {str(uuid.uuid4()): u for u in units}
-        self.units = self.initial_units
+        self.units = self.copy_units(self.initial_units)
         self.rounds = 0
 
     def __repr__(self):
         s = ''
 
         units = {u.point: u for u in self.units.values()}
-        for y in range(max([point.y for point in self.zone]) + 2):
+        for y in range(max([point[1] for point in self.zone]) + 2):
             hit_points = []
-            for x in range(max([point.x for point in self.zone]) + 2):
+            for x in range(max([point[0] for point in self.zone]) + 2):
                 p = (x, y)
                 s += units[p].get_symbol() if p in units else '.' if p in self.zone else '#'
                 if p in units:
@@ -71,7 +72,7 @@ class Zone:
         return s
 
     def reset(self):
-        self.units = self.initial_units
+        self.units = self.copy_units(self.initial_units)
         self.rounds = 0
 
     def only_open(self, points: list):
@@ -84,6 +85,10 @@ class Zone:
     @staticmethod
     def get_adjacent_points(p: tuple):
         return [(p[0], p[1] - 1), (p[0] - 1, p[1]), (p[0] + 1, p[1]), (p[0], p[1] + 1)]
+
+    @staticmethod
+    def copy_units(units: dict):
+        return copy.deepcopy(units)
 
     def get_enemies_of(self, unit: Unit):
         return {k: u for k, u in self.units.items() if unit.is_enemy(u)}
@@ -150,11 +155,35 @@ class Zone:
         self.rounds += 1
         return True
 
+    def get_total_elves(self):
+        return len([u for u in self.units.values() if u.race == Unit.ELF])
+
     def get_outcome(self):
+        return sum(unit.hp for unit in self.units.values() if unit.hp > 0) * self.rounds
+
+    def part1(self):
         while self.round():
             pass
 
-        return sum(unit.hp for unit in self.units.values()) * self.rounds
+        return self.get_outcome()
+
+    def part2(self):
+        ap = 4
+        initial_elves = len([u for u in self.units.values() if u.race == Unit.ELF])
+        while True:
+            self.reset()
+            for key in self.units.keys():
+                if self.units[key].race == Unit.ELF:
+                    self.units[key].ap = ap
+
+            while self.round():
+                if self.get_total_elves() < initial_elves:
+                    break
+
+            if initial_elves == self.get_total_elves():
+                return self.get_outcome()
+
+            ap += 1
 
     @staticmethod
     def parse(data: str):
