@@ -87,12 +87,15 @@ class Zone:
     def __repr__(self):
         s = ''
 
-        units = {u.point: u.get_symbol() for u in self.living_units().values()}
+        units = {u.point: u for u in self.living_units().values()}
         for y in range(max([point.y for point in self.zone]) + 2):
+            hit_points = []
             for x in range(max([point.x for point in self.zone]) + 2):
                 p = Point(x, y)
-                s += units[p] if p in units else '.' if p in self.zone else '#'
-            s += '\n'
+                s += units[p].get_symbol() if p in units else '.' if p in self.zone else '#'
+                if p in units:
+                    hit_points.append(units[p].hp)
+            s += '   ' + ', '.join([str(hp) for hp in hit_points]) + '\n'
 
         return s
 
@@ -122,23 +125,43 @@ class Zone:
         frontier = deque([(neighbour, unit.point) for neighbour in self.get_open_neighbours(unit.point)])
         visited = {unit.point: None}
         while len(frontier) > 0:
-            point, prev = frontier.popleft()
-            if point in targets:
-                route = [point]
-                while prev is not None:
-                    if visited[prev] is not None:
-                        route.append(prev)
-                    prev = visited[prev]
+            queue = frontier.copy()
+            frontier.clear()
+            possible_paths = []
 
-                return route[-1] if len(route) > 0 else None
+            while len(queue) > 0:
+                point, prev = queue.popleft()
+                if point in targets:
+                    path = [point]
+                    while prev is not None:
+                        if visited[prev] is not None:
+                            path.append(prev)
+                        prev = visited[prev]
 
-            if point not in visited:
-                visited[point] = prev
-                frontier.extend([
-                    (neighbour, point)
-                    for neighbour in self.get_open_neighbours(point)
-                    if neighbour not in visited
-                ])
+                    if len(path) > 0:
+                        path.reverse()
+                        possible_paths.append(path)
+                elif point not in visited:
+                    visited[point] = prev
+                    frontier.extend([
+                        (neighbour, point)
+                        for neighbour in self.get_open_neighbours(point)
+                        if neighbour not in visited
+                    ])
+
+            if len(possible_paths) > 0:
+                shortest_path_length = min([len(path) for path in possible_paths])
+                possible_paths = [path for path in possible_paths if len(path) == shortest_path_length]
+
+                if unit.point == Point(7, 4):
+                    print(unit, possible_paths)
+
+                best_target = sorted([path[-1] for path in possible_paths])[0]
+                possible_paths = [path for path in possible_paths if path[-1] == best_target]
+
+                best = sorted(possible_paths, key=lambda p: p[0])[0][0]
+
+                return best
 
         return None
 
@@ -146,7 +169,7 @@ class Zone:
         enemies = self.get_enemies_of(unit)
         nearby_enemies = {k: u for k, u in enemies.items() if u.point in self.get_adjacent_points(unit.point)}
         if len(nearby_enemies) > 0:
-            return min(nearby_enemies.keys(), key=lambda k: nearby_enemies[k].hp)
+            return sorted(nearby_enemies.keys(), key=lambda k: (nearby_enemies[k].hp, nearby_enemies[k].point))[0]
 
     def round(self):
         living_units = self.living_units()
