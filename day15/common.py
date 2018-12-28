@@ -2,36 +2,6 @@ from collections import deque
 import uuid
 
 
-class Point:
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
-
-    def __repr__(self):
-        return '(%d, %d)' % (self.x, self.y)
-
-    def __hash__(self):
-        return hash((self.y, self.x))
-
-    def __lt__(self, other):
-        return self.y < other.y or (self.y == other.y and self.x < other.x)
-
-    def __le__(self, other):
-        return self.__lt__(other) or self.__eq__(other)
-
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __gt__(self, other):
-        return self.y > other.y or (self.y == other.y and self.x > other.x)
-
-    def __ge__(self, other):
-        return self.__gt__(other) or self.__eq__(other)
-
-
 class Unit:
     ELF = 1
     GOBLIN = 2
@@ -40,14 +10,14 @@ class Unit:
         'G': GOBLIN
     }
 
-    def __init__(self, race: int, point: Point):
+    def __init__(self, race: int, point: tuple):
         self.race = race
         self.point = point
         self.ap = 3
         self.hp = 200
 
     def __repr__(self):
-        return '%s@%d,%d' % (self.get_symbol(), self.point.x, self.point.y)
+        return '%s@%d,%d' % (self.get_symbol(), self.point[0], self.point[1])
 
     def get_symbol(self):
         return Unit.race_to_symbol(self.race)
@@ -92,7 +62,7 @@ class Zone:
         for y in range(max([point.y for point in self.zone]) + 2):
             hit_points = []
             for x in range(max([point.x for point in self.zone]) + 2):
-                p = Point(x, y)
+                p = (x, y)
                 s += units[p].get_symbol() if p in units else '.' if p in self.zone else '#'
                 if p in units:
                     hit_points.append(units[p].hp)
@@ -108,12 +78,12 @@ class Zone:
         living_unit_positions = [u.point for u in self.units.values()]
         return [p for p in points if p in self.zone and p not in living_unit_positions]
 
-    def get_open_adjacent_points(self, p: Point):
+    def get_open_adjacent_points(self, p: tuple):
         return self.only_open(self.get_adjacent_points(p))
 
     @staticmethod
-    def get_adjacent_points(p: Point):
-        return [Point(p.x, p.y - 1), Point(p.x - 1, p.y), Point(p.x + 1, p.y), Point(p.x, p.y + 1)]
+    def get_adjacent_points(p: tuple):
+        return [(p[0], p[1] - 1), (p[0] - 1, p[1]), (p[0] + 1, p[1]), (p[0], p[1] + 1)]
 
     def get_enemies_of(self, unit: Unit):
         return {k: u for k, u in self.units.items() if unit.is_enemy(u)}
@@ -128,8 +98,7 @@ class Zone:
         frontier = deque([(neighbour, unit.point) for neighbour in self.get_adjacent_points(unit.point)])
         visited = {unit.point: None}
 
-        open_positions = [p for p in self.zone if p not in [u.point for u in self.units.values()]]
-
+        open_positions = {p: True for p in self.zone if p not in [u.point for u in self.units.values()]}
         while len(frontier) > 0:
             point, prev = frontier.popleft()
             if point not in visited:
@@ -156,12 +125,12 @@ class Zone:
 
     def select_target(self, unit: Unit):
         enemies = self.get_enemies_of(unit)
-        nearby_enemies = {k: u for k, u in enemies.items() if u.point in self.get_adjacent_points(unit.point)}
-        if len(nearby_enemies) > 0:
-            return sorted(nearby_enemies.keys(), key=lambda k: (nearby_enemies[k].hp, nearby_enemies[k].point))[0]
+        nearby = {k: u for k, u in enemies.items() if u.point in self.get_adjacent_points(unit.point)}
+        if len(nearby) > 0:
+            return sorted(nearby.keys(), key=lambda k: (nearby[k].hp, nearby[k].point[1], nearby[k].point[0]))[0]
 
     def round(self):
-        for key in sorted(self.units.keys(), key=lambda k: self.units[k].point):
+        for key in sorted(self.units.keys(), key=lambda k: (self.units[k].point[1], self.units[k].point[0])):
             if key not in self.units:
                 continue
 
@@ -193,7 +162,7 @@ class Zone:
         longest = max([len(line) for line in lines])
 
         units = [
-            Unit(Unit.symbol_to_race(lines[y][x]), Point(x, y))
+            Unit(Unit.symbol_to_race(lines[y][x]), (x, y))
             for x in range(longest)
             for y in range(len(lines))
             if Unit.is_unit_symbol(lines[y][x])
@@ -202,10 +171,10 @@ class Zone:
         unit_points = [u.point for u in units]
 
         zone = [
-            Point(x, y)
+            (x, y)
             for x in range(longest)
             for y in range(len(lines))
-            if lines[y][x] == '.' or Point(x, y) in unit_points
+            if lines[y][x] == '.' or (x, y) in unit_points
         ]
 
         return Zone(zone, units)
