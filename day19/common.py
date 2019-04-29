@@ -49,16 +49,39 @@ class Program:
 
         return method(instruction)
 
+    def next_instruction(self):
+        return self.instructions[self.ip] if 0 <= self.ip < len(self.instructions) else None
+
+    def state_repr(self):
+        return 'ip=%d %s' % (self.ip, str(self.registers))
+
     def execute(self):
+        i = 0
         while True:
+            # Get the instruction that the instruction pointer points to
             instruction = self.instructions[self.ip] if 0 <= self.ip < len(self.instructions) else None
             if instruction is None:
                 break
 
+            # Write instruction pointer value to the bound register before instruction
             self.registers[self.ip_register] = self.ip
+
+            # Execute the instruction if there is one, otherwise break out of the loop and end execution
+            pre_instruction = self.state_repr()
             self.execute_instruction(instruction)
+            post_instruction = self.state_repr()
+
+            # Write the value of the bound register back to the instruction pointer
             self.ip = self.registers[self.ip_register]
+
+            # Increment the instruction pointer
             self.ip += 1
+
+            i += 1
+            if i > 1000:
+                break
+
+            print('%s %s %s' % (pre_instruction, str(instruction), post_instruction))
 
     def instruction_addr(self, i: Instruction):
         self.registers[i.c] = self.registers[i.a] + self.registers[i.b]
