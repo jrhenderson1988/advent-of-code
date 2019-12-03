@@ -3,9 +3,12 @@ package com.github.jrhenderson1988.adventofcode2019.day2
 import java.lang.IllegalArgumentException
 
 class Program(private val input: List<Int>) {
-    fun execute(): List<Int> {
+    fun execute(first: Int? = null, second: Int? = null): List<Int> {
         var pointer = 0
         val instructions = input.toMutableList()
+
+        instructions[1] = first ?: instructions[1]
+        instructions[2] = second ?: instructions[2]
 
         while (true) {
             val opcode = instructions[pointer]
