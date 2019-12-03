@@ -7,10 +7,6 @@ class Wire(val path: List<Path>) {
         }
     }
 
-    fun findIntersections(other: Wire): Set<Pair<Int, Int>> {
-        return calculatePoints().intersect(other.calculatePoints())
-    }
-
     override fun toString(): String {
         return path.toString()
     }

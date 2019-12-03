@@ -25,11 +25,4 @@ class WireTest {
         ).forEach { (input, expected) ->
             assertEquals(expected, Wire(input).calculatePoints())
         }
-
-    @Test
-    fun `findIntersections returns a set containing all intersecting points`() {
-        val a = Wire(listOf(Path(Direction.R, 8), Path(Direction.U, 5), Path(Direction.L, 5), Path(Direction.D, 3)))
-        val b = Wire(listOf(Path(Direction.U, 7), Path(Direction.R, 6), Path(Direction.D, 4), Path(Direction.L, 4)))
-        println(a.findIntersections(b))
-    }
 }
