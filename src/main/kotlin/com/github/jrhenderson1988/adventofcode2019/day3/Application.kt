@@ -9,4 +9,11 @@ class Application {
         val wireB = Wire(lineB.split(',').map { Path.parse(it) })
         return Panel(wireA, wireB).calculateDistanceOfClosestIntersection()
     }
+
+    fun part2(args: Array<String>): Int? {
+        val (lineA, lineB) = readFileAsLines(args.first())
+        val wireA = Wire(lineA.split(',').map { Path.parse(it) })
+        val wireB = Wire(lineB.split(',').map { Path.parse(it) })
+        return Panel(wireA, wireB).calculateCombinedFewestRequiredToReachNearestIntersection()
+    }
 }
