@@ -2,12 +2,12 @@ package com.github.jrhenderson1988.adventofcode2019
 
 import kotlin.system.exitProcess
 
-class Application(val args: Array<String>) {
+class Application(private val args: Array<String>) {
     fun run() {
         val (day, part) = parseDayAndPart(args.first())
 
         try {
-            val clazz = Class.forName(this::class.java.packageName + ".day" + day + ".Application")
+            val clazz = Class.forName(this::class.java.`package`.name + ".day$day.Application")
             val method = clazz.getMethod("part$part", Array<String>::class.java)
 
             println(method.invoke(clazz.getConstructor()?.newInstance(), args.drop(1).toTypedArray()))
