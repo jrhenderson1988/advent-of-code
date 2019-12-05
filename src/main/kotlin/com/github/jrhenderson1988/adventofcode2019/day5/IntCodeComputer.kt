@@ -44,14 +44,7 @@ class IntCodeComputer(private val program: String) {
                 instructions[instructions[pointer + argument + 1]]
             }
         }
-
-//        private fun outputIndex(opCode: OpCode, pointer: Int, instructions: List<Int>): Int {
-//            if (opCode.writes) {
-//                return instructions[pointer + opCode.argumentCount]
-//            } else {
-//                return
-//            }
-//        }
+        
         private fun outputIndex(opCode: OpCode, pointer: Int, instructions: List<Int>) =
             instructions[pointer + opCode.argumentCount]
     }

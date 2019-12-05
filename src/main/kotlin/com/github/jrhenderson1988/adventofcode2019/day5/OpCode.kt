@@ -27,10 +27,6 @@ class OpCode(input: Int) {
         }
     }
 
-    override fun toString(): String {
-        return "OpCode [instruction=$instruction, argumentCount=$argumentCount, modes=$modes]"
-    }
-
     companion object {
         const val ADD = 1
         const val MULTIPLY = 2
