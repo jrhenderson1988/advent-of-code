@@ -9,6 +9,19 @@ class AmplifierController(private val program: String) {
     fun calculateLargestOutputSignal(phaseSequence: List<Int>, initialSignal: Int) =
         generatePermutations(phaseSequence).map { sequence -> calculateOutputSignal(sequence, initialSignal) }.max()
 
+    fun calculateMaxThrusterSignalFromFeedbackLoop(phaseSequence: List<Int>, initialSignal: Int) =
+        generatePermutations(phaseSequence).map { sequence ->
+            val amplifiers = sequence.map { Amplifier(program, it) }
+            var signal = 0
+            while (!amplifiers.last().terminated) {
+                signal = amplifiers.fold(signal) { input, amplifier ->
+                    amplifier.execute(input)
+                }
+            }
+
+            amplifiers.last().lastOutput
+        }.max()
+
 
     companion object {
         fun generatePermutations(items: List<Int>) = generatePermutations(items, items.size)

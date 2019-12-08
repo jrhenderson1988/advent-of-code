@@ -4,8 +4,8 @@ class Amplifier(program: String, private val phase: Int) {
     private val instructions = parseIntoList(program).toMutableList()
     private var initialised = false
     private var ip = 0
-    private var lastOutput: Int = -1
-    private var terminated = false
+    var lastOutput: Int = -1
+    var terminated = false
 
     // Phase is the amps initial input
     // Signal is the second input which it receives as either 0 (first amp) or from a previous amp's output
@@ -20,7 +20,8 @@ class Amplifier(program: String, private val phase: Int) {
             return lastOutput
         }
 
-        loop@ while (true) {
+        var halt = false
+        while (!halt) {
             val opCode = OpCode(instructions[ip])
 
             var nextPointer: Int? = null
@@ -37,7 +38,7 @@ class Amplifier(program: String, private val phase: Int) {
                 }
                 OpCode.OUTPUT -> {
                     lastOutput = value(opCode, 0, ip, instructions)
-                    break@loop
+                    halt = true
                 }
                 OpCode.JUMP_IF_TRUE -> nextPointer =
                     if (value(opCode, 0, ip, instructions) != 0) value(opCode, 1, ip, instructions) else null
@@ -49,7 +50,7 @@ class Amplifier(program: String, private val phase: Int) {
                     if (value(opCode, 0, ip, instructions) == value(opCode, 1, ip, instructions)) 1 else 0
                 OpCode.TERMINATE -> {
                     terminated = true
-                    break@loop
+                    halt = true
                 }
             }
 
