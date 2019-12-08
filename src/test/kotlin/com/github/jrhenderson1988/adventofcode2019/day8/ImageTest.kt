@@ -8,16 +8,8 @@ class ImageTest {
     fun buildLayers() {
         val layers = Image.buildLayers("123456789012", 3, 2)
         assertEquals(2, layers.size)
-
-        val first = layers.first()
-        assertEquals(listOf(1, 2, 3, 4, 5, 6), first.pixels)
-        assertEquals(3, first.width)
-        assertEquals(2, first.height)
-
-        val second = layers.last()
-        assertEquals(listOf(7, 8, 9, 0, 1, 2), second.pixels)
-        assertEquals(3, second.width)
-        assertEquals(2, second.height)
+        assertEquals(listOf(1, 2, 3, 4, 5, 6), layers.first())
+        assertEquals(listOf(7, 8, 9, 0, 1, 2), layers.last())
     }
 
     @Test
@@ -26,4 +18,9 @@ class ImageTest {
             .forEach { (input, expected) ->
                 assertEquals(expected, Image(input.first, input.second.first, input.second.second).calculateChecksum())
             }
+
+    @Test
+    fun render() =
+        mapOf("0222112222120000" to "01\n10")
+            .forEach { (input, expected) -> assertEquals(expected, Image(input, 2, 2).render(false)) }
 }
