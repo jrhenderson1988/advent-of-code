@@ -7,14 +7,6 @@ class Amplifier(program: String, private val phase: Int) {
     var lastOutput: Int = -1
     var terminated = false
 
-    // Phase is the amps initial input
-    // Signal is the second input which it receives as either 0 (first amp) or from a previous amp's output
-    // The phase should never change, but the signal passed to the execute method can be different each time
-    // The execution must block and wait for the next input if it sees another "3" opcode but can continue otherwise
-    // Maybe keep track of a "terminated" flag so that the execute method always just returns again with its previous
-    //  output if it is ever called again (it shouldn't be)
-    //
-
     fun execute(signal: Int): Int {
         if (terminated) {
             return lastOutput
