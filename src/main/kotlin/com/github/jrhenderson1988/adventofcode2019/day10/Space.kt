@@ -13,12 +13,32 @@ class Space(map: String) {
             .values
             .max()
 
-    fun calculateDestructionOrder() {
-        val base = calculateTotalAsteroidsVisibleFromEachAsteroid().maxBy { it.value }?.key
+    fun calculateNthDestroyedAsteroid(n: Int) {
+        val base = calculateTotalAsteroidsVisibleFromEachAsteroid().maxBy { it.value }!!.key
+        val toDestroy = asteroids
+            .filter { it != base }
+            .groupBy { angle(base, it) }
+            .map { it.key to it.value.sortedBy { asteroid -> distance(base, asteroid) } }
+            .toMap()
+            .toSortedMap()
+
+//        var lastPoint: Pair<Int, Int>? = null
+//        for (i in (0 until n)) {
+//            if (toDestroy.isEmpty()) {
+//                error("N is too large")
+//            }
+//
+//            lastPoint = toDestroy.first()
+//
+//
+//        }
+
         // Find home base
         // look at all other asteroids
         // Sort them in order of angle first, then distance for those with the same angle
+
         println(base)
+        println(toDestroy)
     }
 
     fun calculateTotalAsteroidsVisibleFromEachAsteroid() =
@@ -36,8 +56,12 @@ class Space(map: String) {
         pointsBetween(a, b).intersect(asteroids).isEmpty()
 
     companion object {
+        fun distance(a: Pair<Int, Int>, b: Pair<Int, Int>) = abs(a.first - b.first) + abs(a.second - b.second)
+
         fun angle(a: Pair<Int, Int>, b: Pair<Int, Int>): Double {
-            return atan2(abs(a.second - b.second).toDouble(), abs(a.first - b.first).toDouble()) / (180 / PI)
+            return atan2((b.first - a.first).toDouble(), (a.second - b.second).toDouble()) % (2 * PI)
+//            val distance = Pair(abs(a.first - b.first), abs(a.second - b.second))
+//            return atan2(distance.second.toDouble(), distance.first.toDouble())
         }
 
         fun pointsBetween(a: Pair<Int, Int>, b: Pair<Int, Int>): Set<Pair<Int, Int>> {

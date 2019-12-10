@@ -120,10 +120,15 @@ class SpaceTest {
             assertEquals(expected, Space.delta(input.first, input.second))
         }
 
+//    @Test
+//    fun angle() =
+//        mapOf(Pair(Pair(0, 5), Pair(7, 0)) to 35.5)
+//            .forEach { (input, expected) ->
+//                println(Space.angle(input.first, input.second))
+//            }
+
     @Test
-    fun angle() =
-        mapOf(Pair(Pair(0, 5), Pair(7, 0)) to 35.5)
-            .forEach { (input, expected) ->
-                println(Space.angle(input.first, input.second))
-            }
+    fun calculateNthDestroyedAsteroid() {
+        Space(TEST_GRID).calculateNthDestroyedAsteroid(200)
+    }
 }
