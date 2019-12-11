@@ -2,7 +2,6 @@ package com.github.jrhenderson1988.adventofcode2019.day10
 
 import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.atan
 import kotlin.math.atan2
 
 class Space(map: String) {
@@ -13,32 +12,26 @@ class Space(map: String) {
             .values
             .max()
 
-    fun calculateNthDestroyedAsteroid(n: Int) {
+    fun calculateNthDestroyedAsteroid(n: Int): Pair<Int, Int> {
         val base = calculateTotalAsteroidsVisibleFromEachAsteroid().maxBy { it.value }!!.key
-        val toDestroy = asteroids
+
+        val toDestroy = mutableListOf<Pair<Pair<Int, Int>, Double>>()
+
+        asteroids
             .filter { it != base }
             .groupBy { angle(base, it) }
-            .map { it.key to it.value.sortedBy { asteroid -> distance(base, asteroid) } }
-            .toMap()
-            .toSortedMap()
+            .forEach { (angle, asteroids) ->
+                asteroids.sortedBy { distance(base, it) }
+                    .forEachIndexed { index, asteroid ->
+                        toDestroy.add(Pair(asteroid, angle + (360 * index)))
+                    }
+            }
 
-//        var lastPoint: Pair<Int, Int>? = null
-//        for (i in (0 until n)) {
-//            if (toDestroy.isEmpty()) {
-//                error("N is too large")
-//            }
-//
-//            lastPoint = toDestroy.first()
-//
-//
-//        }
+        if (n >= toDestroy.size) {
+            error("Asteroid $n does not exist")
+        }
 
-        // Find home base
-        // look at all other asteroids
-        // Sort them in order of angle first, then distance for those with the same angle
-
-        println(base)
-        println(toDestroy)
+        return toDestroy.sortedBy { it.second }.map { it.first }[n]
     }
 
     fun calculateTotalAsteroidsVisibleFromEachAsteroid() =
@@ -56,12 +49,20 @@ class Space(map: String) {
         pointsBetween(a, b).intersect(asteroids).isEmpty()
 
     companion object {
+        const val R90 = PI / 2
+        const val R180 = PI
+        const val R270 = R90 + R180
+        const val R360 = PI * 2
+
         fun distance(a: Pair<Int, Int>, b: Pair<Int, Int>) = abs(a.first - b.first) + abs(a.second - b.second)
 
         fun angle(a: Pair<Int, Int>, b: Pair<Int, Int>): Double {
-            return atan2((b.first - a.first).toDouble(), (a.second - b.second).toDouble()) % (2 * PI)
-//            val distance = Pair(abs(a.first - b.first), abs(a.second - b.second))
-//            return atan2(distance.second.toDouble(), distance.first.toDouble())
+            val newA = Pair(a.first, a.second * -1)
+            val newB = Pair(b.first, b.second * -1)
+            val direction = Pair((newB.first - newA.first).toDouble(), (newB.second - newA.second).toDouble())
+            val angle = ((R360 - (atan2(direction.second, direction.first))) + R90) % R360
+
+            return angle * (180 / PI)
         }
 
         fun pointsBetween(a: Pair<Int, Int>, b: Pair<Int, Int>): Set<Pair<Int, Int>> {
