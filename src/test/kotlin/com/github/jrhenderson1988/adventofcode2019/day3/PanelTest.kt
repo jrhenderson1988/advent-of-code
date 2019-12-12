@@ -12,6 +12,12 @@ class PanelTest {
     }
 
     @Test
+    fun `manhattanDistance correctly calculates distance between two points`() =
+        mapOf(Pair(Pair(0, 0), Pair(3, 3)) to 6).forEach { (input, expected) ->
+            assertEquals(expected, Panel.manhattanDistance(input.first, input.second))
+        }
+
+    @Test
     fun `calculateDistanceOfClosestIntersection gets distance of closest intersection to (0, 0)`() {
         assertEquals(
             159, Panel(
