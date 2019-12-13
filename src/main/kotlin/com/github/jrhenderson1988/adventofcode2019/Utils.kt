@@ -19,6 +19,10 @@ fun readFileAsLines(name: String): List<String> {
 fun manhattanDistance(a: Pair<Int, Int>, b: Pair<Int, Int>) = abs(a.first - b.first) + abs(a.second - b.second)
 
 fun hcf(a: Int, b: Int): Int = if (b == 0) a else hcf(b, a % b)
+fun lcm(a: Int, b: Int) = a / hcf(a, b) * b
+
+fun hcf(a: Long, b: Long): Long = if (b == 0L) a else hcf(b, a % b)
+fun lcm(a: Long, b: Long) = a / hcf(a, b) * b
 
 fun delta(a: Pair<Int, Int>, b: Pair<Int, Int>): Pair<Int, Int> {
     val deltaX = abs(a.first - b.first)
