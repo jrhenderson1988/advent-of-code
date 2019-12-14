@@ -1,6 +1,6 @@
 package com.github.jrhenderson1988.adventofcode2019.day13
 
-enum class TileId(val id: Int) {
+enum class Tile(val id: Long) {
     EMPTY(0),
     WALL(1),
     BLOCK(2),
@@ -8,6 +8,6 @@ enum class TileId(val id: Int) {
     BALL(4);
 
     companion object {
-        fun fromValue(value: Int) = values().find { it.id == value }
+        fun fromValue(value: Long) = values().find { it.id == value }
     }
 }
