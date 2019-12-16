@@ -74,11 +74,21 @@ class NanoFactoryTest {
 
     @Test
     fun calculateTotalOresRequiredToMakeFuel() =
-        mapOf(A to 30)//, B to 165, C to 13312, D to 180697, E to 2210736)
+        mapOf(A to 31L, B to 165L, C to 13312L, D to 180697L, E to 2210736L)
             .forEach { (input, expected) ->
                 assertEquals(
                     expected,
                     NanoFactory.parse(input.trim().trimIndent()).calculateTotalOresRequiredToMakeFuel()
+                )
+            }
+
+    @Test
+    fun calculateFuelGeneratedByOneTrillionOres() =
+        mapOf(C to 82892753L, D to 5586022L, E to 460664L)
+            .forEach { (input, expected) ->
+                assertEquals(
+                    expected,
+                    NanoFactory.parse(input.trim().trimIndent()).calculateFuelGeneratedByOneTrillionOres()
                 )
             }
 }

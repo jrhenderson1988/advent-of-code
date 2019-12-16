@@ -6,4 +6,8 @@ class Application {
     fun part1(args: Array<String>) =
         NanoFactory.parse(readFileAsString(args.first()))
             .calculateTotalOresRequiredToMakeFuel()
+
+    fun part2(args: Array<String>) =
+        NanoFactory.parse(readFileAsString(args.first()))
+            .calculateFuelGeneratedByOneTrillionOres()
 }

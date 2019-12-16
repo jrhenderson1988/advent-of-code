@@ -1,35 +1,62 @@
 package com.github.jrhenderson1988.adventofcode2019.day14
 
-class NanoFactory(val reactions: Map<Chemical, List<Chemical>>) {
-    fun calculateTotalOresRequiredToMakeFuel(): Int {
-        return calculateTotalRequiredBaseChemical(Chemical("A", 1))
-    }
+import kotlin.math.max
 
-    fun calculateTotalRequiredBaseChemical(chemical: Chemical): Int {
-        val ingredients = findIngredientsFor(chemical)
-        if (ingredients.isEmpty()) {
-            return 1
+class NanoFactory(private val recipes: Map<String, Pair<Long, List<Chemical>>>) {
+    fun calculateTotalOresRequiredToMakeFuel() = requiredOre(Chemical("FUEL", 1), mutableMapOf())
+
+    fun calculateFuelGeneratedByOneTrillionOres(): Long {
+        var l = 0L
+        var r = TRILLION
+        var best = 0L
+        while (l <= r) {
+            val m = (l + r) / 2
+            val result = requiredOre(Chemical("FUEL", m), mutableMapOf())
+            when {
+                result < TRILLION -> {
+                    l = m + 1
+                    best = m
+                }
+                result > TRILLION -> r = m - 1
+                else -> return m
+            }
         }
 
-        var total = 0
-        for (ingredient in ingredients) {
-            total += ingredient.quantity * calculateTotalRequiredBaseChemical(ingredient)
-        }
-
-        return total
+        return best
     }
 
-    private fun findIngredientsFor(chemical: Chemical) =
-        reactions.entries.find { it.key.name == chemical.name }?.value ?: emptyList()
+    private fun requiredOre(chemical: Chemical, surplus: MutableMap<String, Long>): Long {
+        val (product, quantity) = chemical.name to chemical.quantity
+        val (recipeQuantity, ingredients) = recipes[product] ?: error("Could not find recipe for $chemical")
+        val existing = surplus[product] ?: 0
+        val required = quantity - existing
+        val multiplier = (max(required, 0) + recipeQuantity - 1) / recipeQuantity
+        val used = recipeQuantity * multiplier
+        val extra = used - required
 
+        surplus[product] = extra
+
+        return ingredients.fold(0L) { acc, ingredient ->
+            acc + if (ingredient.name == "ORE") {
+                multiplier * ingredient.quantity
+            } else {
+                requiredOre(Chemical(ingredient.name, multiplier * ingredient.quantity), surplus)
+            }
+        }
+    }
 
     companion object {
+        const val TRILLION = 1_000_000_000_000L
+
         fun parse(input: String) =
             NanoFactory(
                 input.lines()
                     .map { line ->
                         val (input, output) = line.split("=>")
-                        Chemical.parse(output.trim()) to input.split(',').map { Chemical.parse(it) }.toList()
+                        val target = Chemical.parse(output.trim())
+                        val ingredients = input.split(',').map { Chemical.parse(it.trim()) }.toList()
+
+                        target.name to Pair(target.quantity, ingredients)
                     }.toMap()
             )
 
