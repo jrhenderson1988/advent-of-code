@@ -2,7 +2,12 @@ package com.github.jrhenderson1988.adventofcode2019.day17
 
 import com.github.jrhenderson1988.adventofcode2019.common.Direction
 
-// L4, L4, L10, R4, R4, L4, L4, R8, R10, L4, L4, L10, R4, R4, L10
+// L4,L4,L10,R4,R4,L4,L4,R8,R10,L4,L4,L10,R4,R4,L10,R10,L4,L4,L10,R4,R4,L10,R10,R4,L4,L4,R8,R10,R4,L10,R10,R4,L10,R10,R4,L4,L4,R8,R10
+//
+// B,C,B,A,B,A,C,A,A,C
+// A: R4,L10,R10
+// B: L4,L4,L10,R4
+// C: R4,L4,L4,R8,R10
 
 class ASCII(private val intCodeComputer: IntCodeComputer) {
     fun calculateSumOfAlignmentParameters(): Int {
@@ -13,12 +18,14 @@ class ASCII(private val intCodeComputer: IntCodeComputer) {
 
     fun solve(): Int {
         val (robotPosition, scaffolding) = mapScaffolding()
-        val cpu = intCodeComputer
 
-        cpu.instructions[0] = 2
 
         println(robotPosition)
         println(render(robotPosition, scaffolding))
+
+//        val cpu = intCodeComputer
+//        cpu.instructions[0] = 2
+
 
         return -1
     }
