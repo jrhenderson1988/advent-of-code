@@ -6,8 +6,8 @@ class Application {
     fun part1(args: Array<String>) =
         ASCII(IntCodeComputer.createFromString(readFileAsString(args.first())))
             .calculateSumOfAlignmentParameters()
+
     fun part2(args: Array<String>) =
         ASCII(IntCodeComputer.createFromString(readFileAsString(args.first())))
-            .solve()
-
+            .solve(false)
 }
