@@ -1,10 +1,11 @@
 package com.github.jrhenderson1988.adventofcode2019.day20
 
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DonutMazeTest {
     companion object {
-        const val INPUT = """
+        const val A = """
                      A           
                      A           
               #######.#########  
@@ -25,10 +26,52 @@ class DonutMazeTest {
                          Z       
                          Z       
         """
+
+        const val B = """
+                               A               
+                               A               
+              #################.#############  
+              #.#...#...................#.#.#  
+              #.#.#.###.###.###.#########.#.#  
+              #.#.#.......#...#.....#.#.#...#  
+              #.#########.###.#####.#.#.###.#  
+              #.............#.#.....#.......#  
+              ###.###########.###.#####.#.#.#  
+              #.....#        A   C    #.#.#.#  
+              #######        S   P    #####.#  
+              #.#...#                 #......VT
+              #.#.#.#                 #.#####  
+              #...#.#               YN....#.#  
+              #.###.#                 #####.#  
+            DI....#.#                 #.....#  
+              #####.#                 #.###.#  
+            ZZ......#               QG....#..AS
+              ###.###                 #######  
+            JO..#.#.#                 #.....#  
+              #.#.#.#                 ###.#.#  
+              #...#..DI             BU....#..LF
+              #####.#                 #.#####  
+            YN......#               VT..#....QG
+              #.###.#                 #.###.#  
+              #.#...#                 #.....#  
+              ###.###    J L     J    #.#.###  
+              #.....#    O F     P    #.#...#  
+              #.###.#####.#.#####.#####.###.#  
+              #...#.#.#...#.....#.....#.#...#  
+              #.#####.###.###.#.#.#########.#  
+              #...#.#.....#...#.#.#.#.....#.#  
+              #.###.#####.###.###.#.#.#######  
+              #.#.........#...#.............#  
+              #########.###.###.#############  
+                       B   J   C               
+                       U   P   P                
+        """
     }
 
     @Test
-    fun test() {
-        println(DonutMaze.parse(INPUT.trimIndent()).render())
-    }
+    fun calculateDistanceOfShortestPath() =
+        mapOf(A to 23, B to 58)
+            .forEach { (input, expected) ->
+                assertEquals(expected, DonutMaze.parse(input.trimIndent()).calculateDistanceOfShortestPath())
+            }
 }

@@ -1,6 +1,11 @@
 package com.github.jrhenderson1988.adventofcode2019.common
 
-fun dijkstra(points: Set<Pair<Int, Int>>, source: Pair<Int, Int>, target: Pair<Int, Int>): List<Pair<Int, Int>>? {
+fun dijkstra(
+    points: Iterable<Pair<Int, Int>>,
+    source: Pair<Int, Int>,
+    target: Pair<Int, Int>,
+    neighbours: (Pair<Int, Int>) -> Iterable<Pair<Int, Int>>
+): List<Pair<Int, Int>>? {
     val q = points.toMutableSet()
     val dist = q.map { it to Int.MAX_VALUE }.toMap().toMutableMap()
     val prev: MutableMap<Pair<Int, Int>, Pair<Int, Int>?> = q.map { it to null }.toMap().toMutableMap()
@@ -23,8 +28,7 @@ fun dijkstra(points: Set<Pair<Int, Int>>, source: Pair<Int, Int>, target: Pair<I
             return s.reversed().toList()
         }
 
-        val neighbours = Direction.neighboursOf(u).filter { q.contains(it) }
-        for (v in neighbours) {
+        for (v in neighbours(u).filter { q.contains(it) }) {
             val alt = (dist[u] ?: 0) + 1
             if (alt < dist[v]!!) {
                 dist[v] = alt
@@ -35,3 +39,6 @@ fun dijkstra(points: Set<Pair<Int, Int>>, source: Pair<Int, Int>, target: Pair<I
 
     return null
 }
+
+fun dijkstra(points: Set<Pair<Int, Int>>, source: Pair<Int, Int>, target: Pair<Int, Int>) =
+    dijkstra(points, source, target) { point -> Direction.neighboursOf(point) }
