@@ -4,10 +4,10 @@ import com.github.jrhenderson1988.adventofcode2019.common.Direction
 import com.github.jrhenderson1988.adventofcode2019.common.dijkstra
 
 class DonutMaze(
-    val map: Map<Pair<Int, Int>, Cell>,
-    val portals: Map<Pair<Int, Int>, Pair<Int, Int>>,
-    val start: Pair<Int, Int>,
-    val end: Pair<Int, Int>
+    private val map: Map<Pair<Int, Int>, Cell>,
+    private val portals: Map<Pair<Int, Int>, Pair<Int, Int>>,
+    private val start: Pair<Int, Int>,
+    private val end: Pair<Int, Int>
 ) {
     fun calculateDistanceOfShortestPath(): Int {
         val path = dijkstra(map.filter { it.value == Cell.PATH }.keys, start, end) { point ->
@@ -17,8 +17,6 @@ class DonutMaze(
             }
             neighbours
         }
-
-        println(render(path!!.toSet()))
 
         return path!!.size - 1
     }
@@ -30,7 +28,6 @@ class DonutMaze(
         return " " + (0..maxX).joinToString("") { (it % 10).toString() } + (0..maxY).joinToString("\n") { y ->
             (y % 10).toString() + (0..maxX).joinToString("") { x ->
                 when {
-                    Pair(x, y) == Pair(19, 2) -> "~"
                     Pair(x, y) in path -> "+"
                     Pair(x, y) == start -> "@"
                     Pair(x, y) == end -> "X"
