@@ -1,14 +1,11 @@
 package com.github.jrhenderson1988.adventofcode2019.common
 
-fun dijkstra(
-    points: Iterable<Pair<Int, Int>>,
-    source: Pair<Int, Int>,
-    target: Pair<Int, Int>,
-    neighbours: (Pair<Int, Int>) -> Iterable<Pair<Int, Int>>
-): List<Pair<Int, Int>>? {
+import java.util.*
+
+fun <T>dijkstra(points: Iterable<T>, source: T, target: T, neighbours: (T) -> Iterable<T>): List<T>? {
     val q = points.toMutableSet()
     val dist = q.map { it to Int.MAX_VALUE }.toMap().toMutableMap()
-    val prev: MutableMap<Pair<Int, Int>, Pair<Int, Int>?> = q.map { it to null }.toMap().toMutableMap()
+    val prev: MutableMap<T, T?> = q.map { it to null }.toMap().toMutableMap()
 
     dist[source] = 0
     while (q.isNotEmpty()) {
@@ -16,8 +13,8 @@ fun dijkstra(
         q.remove(u)
 
         if (u == target) {
-            val s = mutableListOf<Pair<Int, Int>>()
-            var n: Pair<Int, Int>? = target
+            val s = mutableListOf<T>()
+            var n: T? = target
             if (prev[n] != null || n == source) {
                 while (n != null) {
                     s.add(n)
@@ -42,3 +39,30 @@ fun dijkstra(
 
 fun dijkstra(points: Set<Pair<Int, Int>>, source: Pair<Int, Int>, target: Pair<Int, Int>) =
     dijkstra(points, source, target) { point -> Direction.neighboursOf(point) }
+
+fun <T : Any>bfs(source: T, target: T, neighbours: (T) -> Iterable<T>): List<T>? {
+    val q = ArrayDeque<T>()
+    val discovered = mutableSetOf<T>()
+    val prev = mutableMapOf<T, T>()
+
+    discovered.add(source)
+    q.add(source)
+
+    while (q.isNotEmpty()) {
+        val v = q.poll()
+        if (v == target) {
+            return generateSequence(target, { prev.getOrDefault(it, null)})
+                .toList()
+                .reversed()
+        }
+
+        neighbours(v).filter { !discovered.contains(it) }
+            .forEach {
+                discovered.add(it)
+                prev[it] = v
+                q.add(it)
+            }
+    }
+
+    return null
+}

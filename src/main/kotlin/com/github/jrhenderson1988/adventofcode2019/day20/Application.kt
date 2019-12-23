@@ -4,4 +4,6 @@ import com.github.jrhenderson1988.adventofcode2019.readFileAsString
 
 class Application {
     fun part1(args: Array<String>) = DonutMaze.parse(readFileAsString(args.first())).calculateDistanceOfShortestPath()
+    fun part2(args: Array<String>) =
+        DonutMaze.parse(readFileAsString(args.first())).calculateDistanceOfShortestRecursivePath()
 }
