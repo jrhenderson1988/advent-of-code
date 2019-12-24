@@ -66,3 +66,5 @@ fun <T : Any>bfs(source: T, target: T, neighbours: (T) -> Iterable<T>): List<T>?
 
     return null
 }
+
+fun powerOf(num: Long, exponent: Long): Long = if (exponent == 0L) 1L else num * powerOf(num, exponent - 1L)
