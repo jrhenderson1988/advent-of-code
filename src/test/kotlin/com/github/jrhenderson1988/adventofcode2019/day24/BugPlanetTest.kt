@@ -24,7 +24,7 @@ class BugPlanetTest {
 
     @Test
     fun calculateTotalBugsAfterMinutes() =
-        mapOf(/*Pair(A, 0) to 8, */Pair(A, 10) to 99)
+        mapOf(Pair(A, 0) to 8, Pair(A, 10) to 99)
             .forEach { (input, expected) ->
                 assertEquals(
                     expected,
@@ -80,6 +80,9 @@ class BugPlanetTest {
                 Triple(4, 4, 3)
             )
         ).forEach { (input, expected) ->
-            assertEquals(expected, BugUniverse.parse(A.trimIndent().trim()).neighboursOf(input))
+            assertEquals(
+                expected,
+                BugPlanet.parse(A.trimIndent().trim()).neighboursOf(input.first, input.second, input.third)
+            )
         }
 }

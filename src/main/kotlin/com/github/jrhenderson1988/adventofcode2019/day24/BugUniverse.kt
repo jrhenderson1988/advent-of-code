@@ -8,56 +8,54 @@ class BugUniverse(grid: Map<Pair<Int, Int>, Char>) {
     private val maxX = grid.keys.map { it.first }.max()!!
     private val center = Pair(maxX / 2, maxY / 2)
 
-    fun calculateTotalBugsAfterMinutes(minutes: Int): Int {
-        println(neighboursOf(Triple(0, 0, 0)))
-        return countBugs((0..minutes).fold(universe) { u, _ -> mutate(u) })
-    }
+    fun calculateTotalBugsAfterMinutes(minutes: Int) =
+        countBugs((0 until minutes).fold(universe) { u, _ -> mutate(u) })
 
     private fun mutate(u: Map<Int, Map<Pair<Int, Int>, Char>>): Map<Int, Map<Pair<Int, Int>, Char>> {
-        val minLevel = u.keys.min()!!
-        val maxLevel = u.keys.max()!!
+        val minZ = u.keys.min()!!
+        val maxZ = u.keys.max()!!
 
         val mutated = mutableMapOf<Int, Map<Pair<Int, Int>, Char>>()
-        (minLevel - 1..maxLevel + 1).forEach { level ->
-            println(level)
+        (minZ - 1..maxZ + 1).forEach { level ->
+            val grid = mutableMapOf<Pair<Int, Int>, Char>()
+            (0..maxY).forEach { y ->
+                (0..maxX).forEach { x ->
+                    grid[Pair(x, y)] = mutateTile(
+                        tile(x, y, level, u),
+                        neighboursOf(x, y, level).map { tile(it.first, it.second, it.third, u) }
+                    )
+                }
+            }
+            mutated[level] = grid
         }
-        // Start with 0
-        // Go up 1, 2, 3... do only the ones that exist plus one more
-        // Then go down -1, -2, -3... do only the ones that exist plus one more
-        // Trim off the ones with empty grids
 
-
-        return u
+        return mutated
     }
 
-    fun neighboursOf(position: Triple<Int, Int, Int>): Set<Triple<Int, Int, Int>> {
-        val neighbours = Direction.neighboursOf(Pair(position.first, position.second))
+    fun neighboursOf(x: Int, y: Int, level: Int): Set<Triple<Int, Int, Int>> {
+        val neighbours = Direction.neighboursOf(Pair(x, y))
             .filter { it.first in 0..maxX && it.second in 0..maxY }
-            .map { Triple(it.first, it.second, position.third) }
+            .map { Triple(it.first, it.second, level) }
             .toMutableSet()
 
-        val mid = Triple(center.first, center.second, position.third)
+        val mid = Triple(center.first, center.second, level)
         if (neighbours.contains(mid)) {
             neighbours.remove(mid)
 
             neighbours.addAll(when {
-                position.first == mid.first && position.second == mid.second - 1 ->
-                    (0..maxX).map { x -> Triple(x, 0, position.third + 1) }
-                position.first == mid.first && position.second == mid.second + 1 ->
-                    (0..maxX).map { x -> Triple(x, maxY, position.third + 1) }
-                position.first == mid.first - 1 && position.second == mid.second ->
-                    (0..maxY).map { y -> Triple(0, y, position.third + 1) }
-                position.first == mid.first + 1 && position.second == mid.second ->
-                    (0..maxY).map { y -> Triple(maxX, y, position.third + 1) }
+                x == mid.first && y == mid.second - 1 -> (0..maxX).map { _x -> Triple(_x, 0, level + 1) }
+                x == mid.first && y == mid.second + 1 -> (0..maxX).map { _x -> Triple(_x, maxY, level + 1) }
+                x == mid.first - 1 && y == mid.second -> (0..maxY).map { _y -> Triple(0, _y, level + 1) }
+                x == mid.first + 1 && y == mid.second -> (0..maxY).map { _y -> Triple(maxX, _y, level + 1) }
                 else -> emptyList()
             })
         }
 
         mapOf(
-            Triple(-1, 0, -1) to (position.first == 0),
-            Triple(0, -1, -1) to (position.second == 0),
-            Triple(1, 0, -1) to (position.first == maxX),
-            Triple(0, 1, -1) to (position.second == maxY)
+            Triple(-1, 0, -1) to (x == 0),
+            Triple(0, -1, -1) to (y == 0),
+            Triple(1, 0, -1) to (x == maxX),
+            Triple(0, 1, -1) to (y == maxY)
         ).filter { it.value }.forEach { (delta, _) ->
             neighbours.add(Triple(mid.first + delta.first, mid.second + delta.second, mid.third + delta.third))
         }
@@ -69,11 +67,27 @@ class BugUniverse(grid: Map<Pair<Int, Int>, Char>) {
         when (ch) {
             '#' -> if (neighbours.filter { tile -> tile == '#' }.size == 1) '#' else '.'
             '.' -> if (neighbours.filter { tile -> tile == '#' }.size in setOf(1, 2)) '#' else '.'
-            else -> error("Invalid tile")
+            else -> error("Invalid tile '$ch'.")
+        }
+
+    private fun tile(x: Int, y: Int, level: Int, u: Map<Int, Map<Pair<Int, Int>, Char>>) =
+        if (Pair(x, y) == center) {
+            '.'
+        } else {
+            (u[level] ?: mapOf())[Pair(x, y)] ?: '.'
         }
 
     private fun countBugs(u: Map<Int, Map<Pair<Int, Int>, Char>>) =
-        u.map { level -> level.value.filter { grid -> grid.value == '#' }.size }.sum()
+        u.map { level -> level.value.filter { grid -> grid.key != center && grid.value == '#' }.size }.sum()
+
+    private fun render(u: Map<Int, Map<Pair<Int, Int>, Char>>) =
+        u.map { (level, grid) ->
+            "Level: ${level}\n" + (0..maxY).joinToString("\n") { y ->
+                (0..maxX).joinToString("") { x ->
+                    (if (Pair(x, y) == center) '?' else grid[Pair(x, y)] ?: '.').toString()
+                }
+            }
+        }.joinToString("\n\n")
 
     companion object {
         fun parse(input: String): BugUniverse {

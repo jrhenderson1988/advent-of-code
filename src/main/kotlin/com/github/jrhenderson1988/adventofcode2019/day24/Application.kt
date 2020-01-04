@@ -7,5 +7,5 @@ class Application {
         BugPlanet.parse(readFileAsString(args.first())).biodiversityRatingOfFirstRepetition()
 
     fun part2(args: Array<String>) =
-        BugUniverse.parse(readFileAsString(args.first())).calculateTotalBugsAfterMinutes(200)
+        BugPlanet.parse(readFileAsString(args.first())).calculateTotalBugsInRecursiveUniverseAfterMinutes(200)
 }
