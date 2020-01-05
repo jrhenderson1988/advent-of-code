@@ -10,10 +10,8 @@ class IntCodeComputer(program: List<Long>) {
     var paused = false
     private val inputs = mutableListOf<Long>()
     var inputReceiver: (() -> Long)? = null
-    val lastOutput: Long?
-        get() = outputs.last()
 
-    fun queueInput(value: Long) {
+    private fun queueInput(value: Long) {
         inputs.add(value)
     }
 
@@ -23,11 +21,23 @@ class IntCodeComputer(program: List<Long>) {
         return value
     }
 
+    private fun queueOutput(value: Long) {
+        outputs.add(value)
+    }
+
+    fun dequeueOutput(): Long? {
+        val value = if (outputs.size > 0) outputs[0] else null
+        if (value == null) {
+            outputs.removeAt(0)
+        }
+
+        return value
+    }
+
     fun execute(input: Long? = null): Long? {
         paused = false
         while (!terminated && !paused) {
             val opCode = OpCode(get(ip).toInt())
-            println("$ip: $opCode")
 
             var nextPointer: Long? = null
             when (opCode.instruction) {
@@ -45,7 +55,7 @@ class IntCodeComputer(program: List<Long>) {
                     )
                     paused = true
                 }
-                OpCode.OUTPUT -> outputs.add(value(opCode, 0))
+                OpCode.OUTPUT -> queueOutput(value(opCode, 0))
                 OpCode.JUMP_IF_TRUE -> nextPointer = if (value(opCode, 0) != 0L) value(opCode, 1) else null
                 OpCode.JUMP_IF_FALSE -> nextPointer = if (value(opCode, 0) == 0L) value(opCode, 1) else null
                 OpCode.LESS_THAN -> set(outputIndex(opCode), if (value(opCode, 0) < value(opCode, 1)) 1 else 0)
