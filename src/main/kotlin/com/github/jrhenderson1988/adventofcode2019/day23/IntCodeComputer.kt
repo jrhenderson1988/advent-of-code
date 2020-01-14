@@ -5,45 +5,54 @@ class IntCodeComputer(program: List<Long>) {
     var instructions = originalInstructions.toMutableMap()
     private var ip = 0L
     private var relativeBase = 0L
-    val outputs = mutableListOf<Long>()
     var terminated = false
     var paused = false
     private val inputs = mutableListOf<Long>()
-    var inputReceiver: (() -> Long)? = null
-    val lastOutput: Long?
-        get() = outputs.last()
+    private val outputs = mutableListOf<Long>()
 
     fun queueInput(value: Long) {
         inputs.add(value)
     }
 
-    fun dequeueInput(): Long {
+    private fun dequeueInput(): Long {
         val value = inputs[0]
         inputs.removeAt(0)
         return value
     }
 
-    fun execute(input: Long? = null): Long? {
+    fun dequeueOutput(): Long? {
+        val value = outputs.getOrNull(0)
+        if (value != null) {
+            outputs.removeAt(0)
+        }
+
+        return value
+    }
+
+    fun hasOutput() = outputs.isNotEmpty()
+    fun hasInput() = inputs.isNotEmpty()
+
+    fun execute() {
         paused = false
-        while (!terminated && !paused) {
+        loop@while (!terminated && !paused) {
             val opCode = OpCode(get(ip).toInt())
-            println("$ip: $opCode")
+//            println("$ip: $opCode")
 
             var nextPointer: Long? = null
             when (opCode.instruction) {
                 OpCode.ADD -> set(outputIndex(opCode), value(opCode, 0) + value(opCode, 1))
                 OpCode.MULTIPLY -> set(outputIndex(opCode), value(opCode, 0) * value(opCode, 1))
                 OpCode.INPUT -> {
-                    set(
-                        outputIndex(opCode),
-                        when {
-                            input != null -> input
-                            inputReceiver != null -> inputReceiver!!()
-                            inputs.isNotEmpty() -> dequeueInput()
-                            else -> error("Input was required but no input or inputReceiver was provided")
-                        }
-                    )
-                    paused = true
+//                    print("Input: ")
+                    if (inputs.isNotEmpty()) {
+                        val value = dequeueInput()
+//                        println("$value (from queue)")
+                        set(outputIndex(opCode), value)
+                    } else {
+//                        println("<none> @breaking")
+                        paused = true
+                        break@loop
+                    }
                 }
                 OpCode.OUTPUT -> outputs.add(value(opCode, 0))
                 OpCode.JUMP_IF_TRUE -> nextPointer = if (value(opCode, 0) != 0L) value(opCode, 1) else null
@@ -56,8 +65,6 @@ class IntCodeComputer(program: List<Long>) {
 
             ip = nextPointer ?: ip + opCode.argumentCount + 1
         }
-
-        return if (outputs.isEmpty()) null else outputs.last()
     }
 
     private fun value(opCode: OpCode, argument: Int) =

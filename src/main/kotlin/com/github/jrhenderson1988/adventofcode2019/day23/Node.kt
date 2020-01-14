@@ -1,7 +1,8 @@
 package com.github.jrhenderson1988.adventofcode2019.day23
 
-class Node(private val network: Network, private val address: Long, program: List<Long>) {
+class Node(val address: Long, program: List<Long>) {
     private val cpu = IntCodeComputer(program)
+    var terminated = false
 
     init {
         cpu.queueInput(address)
@@ -12,34 +13,34 @@ class Node(private val network: Network, private val address: Long, program: Lis
         cpu.queueInput(message.y)
     }
 
-    fun execute() {
-        while (!cpu.terminated) {
-            val destination = cpu.execute()!!
-            val x = cpu.execute()!!
-            val y = cpu.execute()!!
-
-            network.send(Packet(destination, x, y))
-        }
-    }
-
-    fun nextPacket(): Packet? {
-        // Initially, need to pass the address as first input instruction
-        // All other input instructions can be packets (or -1 if no packets exist in queue)
-        // Return null when terminated
-        // Otherwise return a packet (3 output instructions - destination, x, y)
-        if (cpu.terminated) {
-            return null
+    fun execute(send: (packet: Packet) -> Unit?): Boolean {
+        if (cpu.terminated || terminated) {
+            terminated = true
+            return false
         }
 
-        val destination = cpu.execute()!!
-        println(destination)
-        val x = cpu.execute()!!
-        println(x)
-        val y = cpu.execute()!!
-        println(y)
+        if (!cpu.hasInput()) {
+            cpu.queueInput(-1)
+        }
 
-        return Packet(destination, x, y)
+        cpu.execute()
+        if (cpu.hasOutput()) {
+            val destination = cpu.dequeueOutput()!!
+            val x = if (cpu.hasOutput()) cpu.dequeueOutput()!! else error("Second output missing")
+            val y = if (cpu.hasOutput()) cpu.dequeueOutput()!! else error("Third output missing")
+
+            send(Packet(destination, x, y))
+            return true
+        }
+
+        return false
     }
+
+    fun terminate() {
+        terminated = true
+    }
+
+    fun hasPacketQueued() = cpu.hasInput()
 
     override fun toString() = "Node[$address]"
 }
