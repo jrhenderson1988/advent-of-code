@@ -116,11 +116,11 @@ class VaultTest {
     @Test
     fun fewestStepsToCollectAllKeysInAllQuadrants() =
         mapOf(
-            INPUT_F to 8
-//            INPUT_G to 24
-//            INPUT_H to 32
-//            INPUT_I to 72
+            INPUT_F to 8,
+            INPUT_G to 24,
+            INPUT_H to 32,
+            INPUT_I to 72
         ).forEach { (input, expected) ->
-            assertEquals(expected, QuadVault.parse(input).shortestPathToCollectAllKeys())
+            assertEquals(expected, Vault.parse(input, true).shortestPathToCollectAllKeys())
         }
 }
