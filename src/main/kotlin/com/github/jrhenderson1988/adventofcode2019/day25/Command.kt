@@ -4,28 +4,6 @@ sealed class Command(val command: String) {
     val ascii = (command.trim() + "\n").map { it.toLong() }
 
     override fun toString() = command
-
-    companion object {
-        fun parse(input: String, state: State): Command {
-            val trimmed = input.trim()
-            val firstSpace = trimmed.indexOf(' ')
-            val cmd = (if (firstSpace > -1) trimmed.substring(0, firstSpace) else trimmed).toLowerCase()
-            val arg = (if (firstSpace > -1) trimmed.substring(firstSpace) else "").trim()
-
-            println("cmd: $cmd, arg: $arg, state: $state")
-
-            return when (cmd) {
-                in setOf("north", "n") -> North
-                in setOf("south", "s") -> South
-                in setOf("east", "e") -> East
-                in setOf("west", "w") -> West
-                in setOf("take", "t") -> Take(arg)
-                in setOf("drop", "d") -> Drop(arg)
-                in setOf("inv", "i") -> Inventory
-                else -> error("Invalid command")
-            }
-        }
-    }
 }
 
 sealed class Direction(val direction: String) : Command(direction) {

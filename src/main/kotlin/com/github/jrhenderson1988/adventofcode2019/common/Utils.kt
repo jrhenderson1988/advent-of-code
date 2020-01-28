@@ -68,3 +68,21 @@ fun <T : Any>bfs(source: T, target: T, neighbours: (T) -> Iterable<T>): List<T>?
 }
 
 fun powerOf(num: Long, exponent: Long): Long = if (exponent == 0L) 1L else num * powerOf(num, exponent - 1L)
+
+fun <T> generateCombinations(items: Set<T>): Set<Set<T>> {
+    val length = items.size
+
+    val combinations = mutableSetOf<Set<T>>()
+    for (i in 0 until (1 shl length)) {
+        val set = mutableSetOf<T>()
+        for (j in 0 until length) {
+            if ((i and (1 shl j)) > 0) {
+                set.add(items.elementAt(j))
+            }
+        }
+
+        combinations.add(set)
+    }
+
+    return combinations
+}
