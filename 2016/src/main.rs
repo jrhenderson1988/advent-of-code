@@ -2,6 +2,7 @@ mod utils;
 mod day1;
 mod day2;
 mod day3;
+mod day4;
 
 use std::env;
 use std::process::exit;
@@ -22,6 +23,7 @@ fn main() {
         "1" => day1::run(path),
         "2" => day2::run(path),
         "3" => day3::run(path),
+        "4" => day4::run(path),
         _ => Err("Unsupported day"),
     };
 
