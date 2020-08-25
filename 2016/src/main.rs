@@ -1,5 +1,7 @@
 mod utils;
 mod day1;
+mod day2;
+mod day3;
 
 use std::env;
 use std::process::exit;
@@ -18,6 +20,8 @@ fn main() {
 
     let result = match day_part {
         "1" => day1::run(path),
+        "2" => day2::run(path),
+        "3" => day3::run(path),
         _ => Err("Unsupported day"),
     };
 
