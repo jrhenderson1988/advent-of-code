@@ -2,7 +2,6 @@ use std::path::Path;
 use crate::utils::Answers;
 use std::fs::read_to_string;
 use std::collections::HashMap;
-use std::collections::hash_map::RandomState;
 use std::cmp::Ordering::{Less, Greater};
 
 pub fn run(path: &Path) -> Result<Answers, &'static str> {
@@ -29,7 +28,7 @@ fn build_counts_by_row(content: &str) -> HashMap<u8, HashMap<char, u32>> {
                         counts.insert(col, HashMap::new());
                     }
 
-                    let mut values = counts.get_mut(&col).unwrap();
+                    let values = counts.get_mut(&col).unwrap();
                     values.insert(ch, match values.get(&ch) {
                         Some(value) => value + 1,
                         None => 1
