@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use regex::{Regex, Match};
+use regex::Regex;
 use std::collections::HashMap;
 use std::cmp::Ordering::{Less, Greater};
 
@@ -20,10 +20,6 @@ pub struct Room {
 }
 
 impl Room {
-    pub fn new(name: String, sector: u32, checksum: String) -> Self {
-        Room { name, sector, checksum }
-    }
-
     pub fn get_sector(&self) -> u32 {
         self.sector
     }
@@ -44,8 +40,7 @@ impl Room {
                 order.push(ch);
             }
 
-            let existing = counts.get(&ch);
-            counts.insert(ch, match existing {
+            counts.insert(ch, match counts.get(&ch) {
                 Some(count) => count + 1,
                 None => 1
             });
@@ -87,10 +82,11 @@ impl Room {
             ' '
         } else {
             let alphabet_length = ASCII_LOWER.len();
-            let shift = self.sector % (alphabet_length as u32);
-
-            // TODO - Continue here
-            '?'
+            let shift = (self.sector as usize) % alphabet_length;
+            match ASCII_LOWER.binary_search(&ch) {
+                Ok(current_index) => ASCII_LOWER[(current_index + shift) % alphabet_length],
+                Err(_) => ch
+            }
         }
     }
 }
