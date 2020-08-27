@@ -39,8 +39,8 @@ impl IPv7 {
     pub fn supports_ssl(&self) -> bool {
         let abas: Vec<(char, char, char)> = self.sequences
             .iter()
-            .map(|sequence| { IPv7::extract_abas(sequence) })
-            .fold(vec![], |acc, aba| { acc.iter().cloned().chain(aba.iter().cloned()).collect() });
+            .map(|sequence| self.extract_abas(sequence) )
+            .fold(vec![], |acc, aba| acc.iter().cloned().chain(aba.iter().cloned()).collect());
 
         let supports_ssl: Option<&IPv7Segment> = self.sequences
             .iter()
@@ -49,8 +49,8 @@ impl IPv7 {
                     IPv7Segment::Hypernet(value) => {
                         let matching_hypernet: Option<(char, char, char)> = abas
                             .iter()
-                            .map(|aba| IPv7::aba_to_bab(*aba))
-                            .find(|bab| IPv7::contains_bab(value, bab));
+                            .map(|aba| self.aba_to_bab(*aba))
+                            .find(|bab| self.contains_bab(value, bab));
 
                         match matching_hypernet {
                             Some(_) => true,
@@ -67,14 +67,14 @@ impl IPv7 {
         }
     }
 
-    pub fn extract_abas(sequence: &IPv7Segment) -> Vec<(char, char, char)> {
+    pub fn extract_abas(&self, sequence: &IPv7Segment) -> Vec<(char, char, char)> {
         match sequence {
-            IPv7Segment::Supernet(value) => IPv7::extract_abas_from_value(&value),
+            IPv7Segment::Supernet(value) => self.extract_abas_from_value(&value),
             _ => vec![]
         }
     }
 
-    pub fn extract_abas_from_value(s: &Vec<char>) -> Vec<(char, char, char)> {
+    pub fn extract_abas_from_value(&self, s: &Vec<char>) -> Vec<(char, char, char)> {
         let mut abas = vec![];
         let len = s.len();
         for i in 0..len - 2 {
@@ -86,15 +86,18 @@ impl IPv7 {
         abas
     }
 
-    pub fn aba_to_bab(s: (char, char, char)) -> (char, char, char) {
+    pub fn aba_to_bab(&self, s: (char, char, char)) -> (char, char, char) {
         (s.1, s.0, s.1)
     }
 
-    pub fn contains_bab(s: &Vec<char>, bab: &(char, char, char)) -> bool {
+    pub fn contains_bab(&self, s: &Vec<char>, bab: &(char, char, char)) -> bool {
+        if *bab == ('n', 'u', 'n') {
+            println!("........");
+        }
         let len = s.len();
         for i in 0..len - 2 {
             if s[i] == bab.0 && s[i + 1] == bab.1 && s[2] == bab.2 {
-                return true
+                return true;
             }
         }
         false
