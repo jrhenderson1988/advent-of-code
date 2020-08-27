@@ -39,7 +39,7 @@ impl IPv7 {
     pub fn supports_ssl(&self) -> bool {
         let abas: Vec<(char, char, char)> = self.sequences
             .iter()
-            .map(|sequence| self.extract_abas(sequence) )
+            .map(|sequence| self.extract_abas(sequence))
             .fold(vec![], |acc, aba| acc.iter().cloned().chain(aba.iter().cloned()).collect());
 
         let supports_ssl: Option<&IPv7Segment> = self.sequences
@@ -91,12 +91,9 @@ impl IPv7 {
     }
 
     pub fn contains_bab(&self, s: &Vec<char>, bab: &(char, char, char)) -> bool {
-        if *bab == ('n', 'u', 'n') {
-            println!("........");
-        }
         let len = s.len();
         for i in 0..len - 2 {
-            if s[i] == bab.0 && s[i + 1] == bab.1 && s[2] == bab.2 {
+            if s[i] == bab.0 && s[i + 1] == bab.1 && s[i + 2] == bab.2 {
                 return true;
             }
         }
