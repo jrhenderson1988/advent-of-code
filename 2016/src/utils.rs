@@ -1,4 +1,7 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Debug};
+use std::hash::Hash;
+use std::collections::{VecDeque, HashSet, HashMap};
+use std::option::Option::Some;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Direction {
@@ -58,4 +61,43 @@ impl Display for Answers {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Answers:\n\tPart 1: {}\n\tPart 2: {}\n", self.part1, self.part2)
     }
+}
+
+pub fn bfs<T, G, N>(root: &T, is_goal: G, next_nodes: N) -> Option<Vec<T>>
+    where
+        T: Eq + Hash + Clone + Debug,
+        G: Fn(&T) -> bool,
+        N: Fn(&T) -> Vec<T>,
+{
+    let mut q: VecDeque<T> = VecDeque::new();
+    let mut discovered: HashSet<T> = HashSet::new();
+    let mut parents: HashMap<T, T> = HashMap::new();
+
+    q.push_back(root.clone());
+    discovered.insert(root.clone());
+    while let Some(v) = q.pop_front() {
+
+        if is_goal(&v) {
+            println!("Found goal!");
+
+            let mut path = vec![v.clone()];
+            let mut current = v.clone();
+            while let Some(parent) = parents.get(&current) {
+                path.insert(0, parent.clone());
+                current = parent.clone();
+            }
+
+            return Some(path);
+        }
+
+        for w in next_nodes(&v) {
+            if !discovered.contains(&w) {
+                discovered.insert(w.clone());
+                parents.insert(w.clone(), v.clone());
+                q.push_back(w.clone());
+            }
+        }
+    }
+
+    None
 }
