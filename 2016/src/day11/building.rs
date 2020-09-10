@@ -6,6 +6,8 @@ use crate::day11::items::Item;
 use pathfinding::prelude::astar;
 use itertools::Itertools;
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
+use regex::Regex;
 
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
@@ -32,6 +34,31 @@ impl Floor {
     }
 }
 
+impl FromStr for Floor {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.contains("nothing relevant") {
+            Ok(Floor::new(BTreeSet::new()))
+        } else {
+            let regex = Regex::new(r"(?m)([a-z]+(?:-compatible microchip| generator))").unwrap();
+            let mut items: BTreeSet<Item> = BTreeSet::new();
+            for m in regex.find_iter(s) {
+                let item_string = m.as_str();
+                items.insert(
+                    if item_string.ends_with(" generator") {
+                        Item::Generator(item_string.chars().take(item_string.len() - 10).collect())
+                    } else {
+                        Item::Microchip(item_string.chars().take(item_string.len() - 21).collect())
+                    }
+                );
+            }
+
+            Ok(Floor::new(items))
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct Building {
     assembly_machine_floor: usize,
@@ -39,9 +66,35 @@ pub struct Building {
     floors: Vec<Floor>,
 }
 
+impl FromStr for Building {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut lines = s.lines();
+        let floors = ["first", "second", "third", "fourth"]
+            .iter()
+            .map(|floor_str| {
+                lines.find(|line| line.contains(floor_str))
+                    .unwrap()
+                    .parse::<Floor>()
+                    .unwrap()
+            })
+            .collect::<Vec<Floor>>();
+        let assembly_machine_floor = 3usize;
+        let current_floor = 0usize;
+
+        Ok(Building::new(current_floor, floors, assembly_machine_floor))
+    }
+}
+
 impl Building {
     pub fn new(current_floor: usize, floors: Vec<Floor>, assembly_machine_floor: usize) -> Self {
         Building { current_floor, floors, assembly_machine_floor }
+    }
+
+    pub fn add_item_to_floor(&mut self, floor_index: usize, item: Item) {
+        let floor = self.floors.get_mut(floor_index).unwrap();
+        floor.items.insert(item);
     }
 
     pub fn is_safe(&self) -> bool {
@@ -60,7 +113,6 @@ impl Building {
         let current = self.clone();
         let goal = self.calculate_goal();
 
-        let mut comparisons = 0u64;
         let result = astar(
             &current,
             move |n| {
@@ -68,15 +120,11 @@ impl Building {
                     .into_iter()
                     .map(|node| (node.clone(), 1))
             },
-            |n| 0,
+            |_n| 0,
             // |n| (n.length_of_target_floor() as i32) * -10,
-            |n| {
-                comparisons += 1;
-                *n == goal
-            },
+            |n| *n == goal,
         );
 
-        println!("Comparisons: {}", comparisons);
         match result {
             Some((path, _)) => (path.len() as u32) - 1,
             None => 0
@@ -103,7 +151,7 @@ impl Building {
         Building { current_floor, floors, assembly_machine_floor: self.assembly_machine_floor }
     }
 
-    pub fn calculate_possible_next_states(&self/*, discovered: &HashSet<Self>*/) -> Vec<Self> {
+    pub fn calculate_possible_next_states(&self) -> Vec<Self> {
         let mut states: Vec<Self> = vec![];
 
         for next_floor in self.possible_next_floors() {
@@ -123,17 +171,6 @@ impl Building {
 
                 if state.is_safe() {
                     states.push(state);
-                    // let mut found_equivalent_state = false;
-                    // for d in discovered {
-                    //     if self.equivalent_to(&d) {
-                    //         found_equivalent_state = true;
-                    //         break;
-                    //     }
-                    // }
-                    //
-                    // if !found_equivalent_state {
-                    //     states.push(state);
-                    // }
                 }
             }
         }
@@ -194,76 +231,6 @@ impl Building {
 
         combinations
     }
-
-    // pub fn distance_from(&self, other: &Self) -> u32 {
-    //     let mut table: HashMap<Item, usize> = HashMap::new();
-    //     for (idx, floor) in other.floors.iter().enumerate() {
-    //         for item in floor.items.iter().cloned() {
-    //             table.insert(item, idx);
-    //         }
-    //     }
-    //
-    //     let mut cost = 0;
-    //     for (idx, floor) in self.floors.iter().enumerate() {
-    //         for item in floor.items.iter() {
-    //             let target_idx = table.get(&item).unwrap();
-    //             cost += ((target_idx - idx) as i32).abs() as u32
-    //         }
-    //     }
-    //
-    //     cost
-    // }
-
-    pub fn length_of_target_floor(&self) -> u32 {
-        let target_floor = self.floors.get(self.assembly_machine_floor).unwrap();
-
-        target_floor.items.len() as u32
-    }
-
-    // /// Return a set of tuples for the current state in format of:
-    // /// [(microchip_a_floor, generator_a_floor), (microchip_b_floor, generator_b_floor), ...]
-    // ///
-    // /// E.g. given the initial state in the Day 11 description, we would have...
-    // /// [(0, 1), (0, 2)]
-    // ///
-    // /// which means:
-    // /// - (hydrogen microchip is on floor 0, hydrogen generator is on floor 1)
-    // /// - (lithium microchip is on floor 0, lithium generator is on floor 2)
-    // ///
-    // /// We would end up with exactly the same shape if the hydrogen and lithium items were swapped.
-    // /// This makes it easy to tell if we've previously seen an equivalent state
-    // pub fn get_shape(&self) -> Vec<(usize, usize)> {
-    //     let (microchips, generators): (Vec<(String, usize)>, Vec<(String, usize)>) = self.floors.iter()
-    //         .enumerate()
-    //         .flat_map(|(idx, f)| {
-    //             f.items.clone()
-    //                 .iter()
-    //                 .map(|i| (i.clone(), idx))
-    //                 .collect::<Vec<(Item, usize)>>()
-    //         })
-    //         .partition_map(|(item, index)| {
-    //             match item {
-    //                 Item::Microchip(name) => Either::Left((name, index)),
-    //                 Item::Generator(name) => Either::Right((name, index)),
-    //             }
-    //         });
-    //
-    //     let generators: HashMap<String, usize> = generators.into_iter().collect();
-    //
-    //     microchips.iter()
-    //         .map(|(name, index)| {
-    //             let generator_index = generators.get(name).unwrap();
-    //             (*index, *generator_index)
-    //         })
-    //         .sorted_by(|(mc_a, gen_a), (mc_b, gen_b)| {
-    //             if mc_a != mc_b {
-    //                 Ord::cmp(mc_a, mc_b)
-    //             } else {
-    //                 Ord::cmp(gen_a, gen_b)
-    //             }
-    //         })
-    //         .collect::<Vec<(usize, usize)>>()
-    // }
 }
 
 impl Display for Building {
