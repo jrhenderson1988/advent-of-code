@@ -23,6 +23,20 @@ pub fn run(path: &Path) -> Result<Answers, &'static str> {
     third.insert(Microchip("plutonium".to_string()));
     let fourth = BTreeSet::new();
 
+    first.insert(Generator("elerium".to_string()));
+    first.insert(Microchip("elerium".to_string()));
+    first.insert(Generator("dilithium".to_string()));
+    first.insert(Microchip("dilithium".to_string()));
+
+    // let mut first = BTreeSet::new();
+    // first.insert(Microchip("hydrogen".to_string()));
+    // first.insert(Microchip("lithium".to_string()));
+    // let mut second = BTreeSet::new();
+    // second.insert(Generator("hydrogen".to_string()));
+    // let mut third = BTreeSet::new();
+    // third.insert(Generator("lithium".to_string()));
+    // let fourth = BTreeSet::new();
+
     let building = Building::new(0, vec![
         Floor::new(first),
         Floor::new(second),

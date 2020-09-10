@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 regex = "1"
 md5 = "0.7"
+pathfinding = "2.0.4"
+itertools = "0.9"
