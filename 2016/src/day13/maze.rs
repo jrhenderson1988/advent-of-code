@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use pathfinding::directed::astar::astar;
 use itertools::Itertools;
-use std::thread::current;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Area {
