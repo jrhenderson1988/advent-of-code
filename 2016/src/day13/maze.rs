@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use pathfinding::directed::astar::astar;
+use itertools::Itertools;
+use std::thread::current;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Area {
@@ -40,9 +42,7 @@ impl Maze {
 
     fn determine_area(&self, x: u32, y: u32) -> Area {
         let number = ((x * x) + (3 * x) + (2 * x * y) + y + (y * y)) + self.favourite_number;
-        let binary = format!("{:b}", number);
-        let total_ones = binary.chars().filter(|&ch| ch == '1').count();
-        if total_ones % 2 == 0 {
+        if number.count_ones() % 2 == 0 {
             Area::Open
         } else {
             Area::Wall
@@ -53,7 +53,7 @@ impl Maze {
         let result = astar(
             &from,
             |&point|
-                self.get_neighbours(point, to)
+                self.get_neighbours(point)
                     .iter()
                     .map(|&other| (other, 1u32))
                     .collect::<Vec<((u32, u32), u32)>>(),
@@ -67,26 +67,37 @@ impl Maze {
         }
     }
 
-    // pub fn to_string(&mut self) -> String {
-    //     (0..=9)
-    //         .map(
-    //             |y| (0..=9)
-    //                 .map(|x| self.get_area(x, y).to_string())
-    //                 .collect::<Vec<String>>()
-    //                 .join("")
-    //         )
-    //         .collect::<Vec<String>>()
-    //         .join("\n")
-    // }
+    pub fn total_reachable_within_50_steps(&mut self, start: (u32, u32)) -> u32 {
+        let mut queue: Vec<((u32, u32), u32)> = vec![(start, 0)];
+        let mut distances: HashMap<(u32, u32), u32> = HashMap::new();
 
-    pub fn get_neighbours(&mut self, point: (u32, u32), target: (u32, u32)) -> Vec<(u32, u32)> {
+        while let Some(item) = queue.pop() {
+            let (point, current_distance) = item;
+            distances.insert(point, current_distance);
+
+            for neighbour in self.get_neighbours(point) {
+                let distance = current_distance + 1;
+                let existing_distance = distances.get(&neighbour);
+                if existing_distance.is_none() || *existing_distance.unwrap() > distance {
+                    queue.push((neighbour, distance));
+                }
+            }
+        }
+
+        distances.values()
+            .filter(|&&distance| distance <= 50)
+            .collect_vec()
+            .len() as u32
+    }
+
+    pub fn get_neighbours(&mut self, point: (u32, u32)) -> Vec<(u32, u32)> {
         vec![(0, -1), (1, 0), (0, 1), (-1, 0)]
             .iter()
             .map(|&other| (other.0 + (point.0 as i32), other.1 + (point.1 as i32)))
             .filter(|&other| other.0 as i32 >= 0 && other.1 as i32 >= 0)
             .map(|other| (other.0 as u32, other.1 as u32))
             .filter(|&other|
-                other == target || match self.get_area(other.0, other.1) {
+                match self.get_area(other.0, other.1) {
                     Area::Open => true,
                     Area::Wall => false
                 }
