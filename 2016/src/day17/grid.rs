@@ -1,34 +1,8 @@
 use std::fmt::{Display, Formatter, Result};
 use pathfinding::directed::bfs::bfs;
 use itertools::Itertools;
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
-impl Direction {
-    pub fn get_char(&self) -> char {
-        match self {
-            Self::Up => 'U',
-            Self::Down => 'D',
-            Self::Left => 'L',
-            Self::Right => 'R',
-        }
-    }
-
-    pub fn apply(&self, from: (usize, usize)) -> (usize, usize) {
-        match self {
-            Self::Up => (from.0, from.1 - 1),
-            Self::Down => (from.0, from.1 + 1),
-            Self::Left => (from.0 - 1, from.1),
-            Self::Right => (from.0 + 1, from.1),
-        }
-    }
-}
+use std::collections::{VecDeque, HashSet};
+use crate::day17::direction::Direction;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Grid {
@@ -81,14 +55,10 @@ impl Grid {
     }
 
     pub fn possible_paths(&self) -> Vec<Self> {
-        let pp = self.unlocked_doors()
+        self.unlocked_doors()
             .iter()
             .map(|&d| self.choose_path(d))
-            .collect();
-
-        // println!("possible paths: {:?}", pp);
-
-        pp
+            .collect()
     }
 
     pub fn found_vault(&self) -> bool {
@@ -111,6 +81,36 @@ impl Grid {
         let path: Vec<Self> = bfs(self, |g| g.possible_paths(), |g| g.found_vault())?;
         let last: &Grid = path.last().unwrap();
         Some(last.get_path())
+    }
+
+    pub fn longest_path_to_target(&self) -> Option<Vec<Direction>> {
+        let mut longest: Option<Vec<Direction>> = None;
+        let mut longest_length = 0usize;
+        let mut q: VecDeque<Grid> = VecDeque::new();
+        let mut discovered: HashSet<Grid> = HashSet::new();
+
+        discovered.insert(self.clone());
+        q.push_back(self.clone());
+        while !q.is_empty() {
+            let v = q.pop_front().unwrap();
+            if v.found_vault() {
+                let current_length = v.path.len();
+                if current_length > longest_length {
+                    longest = Some(v.path.clone());
+                    longest_length = current_length;
+                }
+                continue;
+            }
+
+            for w in v.possible_paths() {
+                if !discovered.contains(&w) {
+                    discovered.insert(w.clone());
+                    q.push_back(w.clone());
+                }
+            }
+        }
+
+        longest
     }
 
     pub fn printable_shortest_path_to_target(&self) -> Option<String> {

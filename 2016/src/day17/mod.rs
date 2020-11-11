@@ -1,3 +1,4 @@
+mod direction;
 mod grid;
 
 use std::path::Path;
@@ -11,6 +12,6 @@ pub fn run(path: &Path) -> Result<Answers, &'static str> {
 
     Ok(Answers {
         part1: grid.printable_shortest_path_to_target().unwrap().to_string(),
-        part2: "TODO".to_string(),
+        part2: grid.longest_path_to_target().unwrap().len().to_string(),
     })
 }
