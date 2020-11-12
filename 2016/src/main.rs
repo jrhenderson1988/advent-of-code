@@ -16,6 +16,8 @@ mod day14;
 mod day15;
 mod day16;
 mod day17;
+mod day18;
+mod day19;
 
 use std::env;
 use std::process::exit;
@@ -52,6 +54,8 @@ fn main() {
         "15" => day15::run(path),
         "16" => day16::run(path),
         "17" => day17::run(path),
+        "18" => day18::run(path),
+        "19" => day19::run(path),
         _ => Err("Unsupported day"),
     };
 

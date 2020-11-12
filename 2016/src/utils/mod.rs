@@ -1,3 +1,5 @@
+pub mod bit_vec;
+
 use std::fmt::{Display, Formatter, Debug};
 
 #[derive(Copy, Clone, Debug)]
