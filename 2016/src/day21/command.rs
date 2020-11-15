@@ -2,7 +2,7 @@ use std::str::FromStr;
 use regex::Regex;
 use std::cmp::{min, max};
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Command {
     SwapPosition { x: usize, y: usize },
     SwapLetter { x: char, y: char },
@@ -59,6 +59,27 @@ impl Command {
                 new_letters.insert(*y, c);
                 new_letters
             }
+        }
+    }
+
+    pub fn reverse(&self, letters: Vec<char>) -> Vec<char> {
+        match self {
+            Command::SwapPosition { .. } => self.execute(letters),
+            Command::SwapLetter { .. } => self.execute(letters),
+            Command::RotateSteps { right, steps } => {
+                Command::RotateSteps { right: !*right, steps: *steps }.execute(letters)
+            }
+            Command::RotateFromLetter { .. } => {
+                for steps in 0..letters.len() {
+                    let attempt = Command::RotateSteps { right: false, steps }.execute(letters.clone());
+                    if self.execute(attempt.clone()) == letters {
+                        return attempt;
+                    }
+                }
+                panic!("could not find original input for rotate from letter");
+            }
+            Command::ReversePositions { .. } => self.execute(letters),
+            Command::Move { x, y } => Command::Move { x: *y, y: *x }.execute(letters)
         }
     }
 }

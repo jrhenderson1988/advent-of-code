@@ -13,7 +13,7 @@ pub fn run(path: &Path) -> Result<Answers, &'static str> {
 
     Ok(Answers {
         part1: program.execute("abcdefgh").to_string(),
-        part2: "TODO".to_string(),
+        part2: program.execute_reverse("fbgdceah").to_string(),
     })
 }
 
