@@ -1,5 +1,5 @@
 use std::fmt::{Formatter, Result, Display};
-use crate::day1::turn::Turn;
+use crate::day01::turn::Turn;
 
 #[derive(Debug)]
 pub struct Instruction {

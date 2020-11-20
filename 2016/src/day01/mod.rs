@@ -4,8 +4,8 @@ mod turn;
 
 use std::path::Path;
 use std::fs::read_to_string;
-use crate::day1::state::State;
-use crate::day1::instruction::Instruction;
+use crate::day01::state::State;
+use crate::day01::instruction::Instruction;
 use crate::utils::{Answers, Direction};
 
 pub fn run(path: &Path) -> Result<Answers, &'static str> {

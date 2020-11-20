@@ -1,6 +1,6 @@
 use std::path::Path;
 use crate::utils::Answers;
-use crate::day8::screen::{Screen, Instruction};
+use crate::day08::screen::{Screen, Instruction};
 use std::fs::read_to_string;
 
 mod screen;

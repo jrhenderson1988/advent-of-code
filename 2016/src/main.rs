@@ -1,13 +1,13 @@
 mod utils;
-mod day1;
-mod day2;
-mod day3;
-mod day4;
-mod day5;
-mod day6;
-mod day7;
-mod day8;
-mod day9;
+mod day01;
+mod day02;
+mod day03;
+mod day04;
+mod day05;
+mod day06;
+mod day07;
+mod day08;
+mod day09;
 mod day10;
 mod day11;
 mod day12;
@@ -39,15 +39,15 @@ fn main() {
 
     let start = SystemTime::now();
     let result = match day_part {
-        "1" => day1::run(path),
-        "2" => day2::run(path),
-        "3" => day3::run(path),
-        "4" => day4::run(path),
-        "5" => day5::run(path),
-        "6" => day6::run(path),
-        "7" => day7::run(path),
-        "8" => day8::run(path),
-        "9" => day9::run(path),
+        "1" | "01" => day01::run(path),
+        "2" | "02" => day02::run(path),
+        "3" | "03" => day03::run(path),
+        "4" | "04" => day04::run(path),
+        "5" | "05" => day05::run(path),
+        "6" | "06" => day06::run(path),
+        "7" | "07" => day07::run(path),
+        "8" | "08" => day08::run(path),
+        "9" | "09" => day09::run(path),
         "10" => day10::run(path),
         "11" => day11::run(path),
         "12" => day12::run(path),

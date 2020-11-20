@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::day2::direction::Direction;
+use crate::day02::direction::Direction;
 
 pub struct Keypad {
     buttons: HashMap<(u32, u32), char>,

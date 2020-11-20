@@ -3,7 +3,7 @@ mod compressed_file;
 use std::path::Path;
 use crate::utils::Answers;
 use std::fs::read_to_string;
-use crate::day9::compressed_file::CompressedFile;
+use crate::day09::compressed_file::CompressedFile;
 
 pub fn run(path: &Path) -> Result<Answers, &'static str> {
     let content = read_to_string(path).unwrap();

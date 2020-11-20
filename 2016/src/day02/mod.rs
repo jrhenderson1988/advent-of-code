@@ -4,8 +4,8 @@ mod direction;
 use std::path::Path;
 use std::fs::read_to_string;
 use crate::utils::Answers;
-use crate::day2::keypad::Keypad;
-use crate::day2::direction::Direction;
+use crate::day02::keypad::Keypad;
+use crate::day02::direction::Direction;
 
 pub fn run(path: &Path) -> Result<Answers, &'static str> {
     let content = read_to_string(path).unwrap();

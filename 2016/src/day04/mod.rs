@@ -3,7 +3,7 @@ mod room;
 use crate::utils::Answers;
 use std::path::Path;
 use std::fs::read_to_string;
-use crate::day4::room::Room;
+use crate::day04::room::Room;
 
 pub fn run(path: &Path) -> Result<Answers, &'static str> {
     let content = read_to_string(path).unwrap();

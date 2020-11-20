@@ -2,7 +2,7 @@ mod ipv7;
 
 use std::path::Path;
 use crate::utils::Answers;
-use crate::day7::ipv7::IPv7;
+use crate::day07::ipv7::IPv7;
 use std::fs::read_to_string;
 
 pub fn run(path: &Path) -> Result<Answers, &'static str> {

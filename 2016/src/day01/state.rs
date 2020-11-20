@@ -1,7 +1,7 @@
 use crate::utils::Direction;
 use std::fmt::{Display, Formatter};
-use crate::day1::instruction::Instruction;
-use crate::day1::turn::Turn;
+use crate::day01::instruction::Instruction;
+use crate::day01::turn::Turn;
 use std::collections::{HashSet};
 
 pub struct State {
