@@ -30,6 +30,14 @@ impl Node {
     pub fn fits_on(&self, other: &Node) -> bool {
         self.used <= other.available
     }
+
+    pub fn fits_on_empty(&self, other: &Node) -> bool {
+        self.used <= other.size
+    }
+
+    pub fn get_key(&self) -> (u8, u8) {
+        (self.x, self.y)
+    }
 }
 
 impl FromStr for Node {

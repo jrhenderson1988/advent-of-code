@@ -12,7 +12,7 @@ pub fn run(path: &Path) -> Result<Answers, &'static str> {
 
     Ok(Answers {
         part1: cluster.total_viable_pairs().to_string(),
-        part2: "TODO".to_string(),
+        part2: cluster.minimum_steps_to_move_target_data_to_start().to_string(),
     })
 }
 
