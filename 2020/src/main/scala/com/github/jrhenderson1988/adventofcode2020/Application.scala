@@ -45,7 +45,7 @@ class Application(private val args: Array[String]) {
       println("Not yet implemented")
     } else {
       println(s"Part 1: ${result.get.part1}")
-      println(s"Part 2: ${result.get.part1}")
+      println(s"Part 2: ${result.get.part2}")
     }
 
     println("\n-----------------")
