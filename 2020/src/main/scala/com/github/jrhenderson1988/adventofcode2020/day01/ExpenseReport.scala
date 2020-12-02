@@ -1,6 +1,6 @@
 package com.github.jrhenderson1988.adventofcode2020.day01
 
-class ExpenseReport(expenses: List[Int]) {
+case class ExpenseReport(expenses: List[Int]) {
   def result(numbers: Int): Int = {
     expenses
       .combinations(numbers)
