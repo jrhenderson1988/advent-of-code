@@ -1,6 +1,6 @@
 package com.github.jrhenderson1988.adventofcode2020.day03
 
-case class Slope(val levels: List[Set[Int]], val visibleLength: Int) {
+case class Slope(levels: List[Set[Int]], visibleLength: Int) {
   def countTreesForSlope(x: Int, y: Int): Int = {
     levels
       .zipWithIndex
@@ -16,7 +16,6 @@ case class Slope(val levels: List[Set[Int]], val visibleLength: Int) {
 
   override def toString: String = levels.toString()
 }
-
 
 object Slope {
   def parse(lines: List[String]): Slope = {
