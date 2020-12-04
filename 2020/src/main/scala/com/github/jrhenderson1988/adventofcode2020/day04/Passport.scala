@@ -1,7 +1,7 @@
 package com.github.jrhenderson1988.adventofcode2020.day04
 
 case class Passport(fields: Map[String, String]) {
-  val requiredFields: Map[String, (String) => Boolean] = Map(
+  val requiredFields: Map[String, String => Boolean] = Map(
     ("byr", isByrValid),
     ("iyr", isIyrValid),
     ("eyr", isEyrValid),
@@ -16,7 +16,7 @@ case class Passport(fields: Map[String, String]) {
   }
 
   def isValid(): Boolean = {
-    containsRequiredFields() && requiredFields.keys.forall(field => requiredFields(field)(fields(field)))
+    containsRequiredFields() && requiredFields.forall { case (key, f) => f(fields(key)) }
   }
 
   private def isByrValid(value: String): Boolean = isYear(value) && between(value.toInt, 1920, 2002)
