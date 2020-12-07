@@ -11,7 +11,6 @@ class GroupResponsesTest extends FunSuite {
       List(
         Set('a'), Set('b'), Set('c')
       ),
-
       List(
         Set('a', 'b'), Set('a', 'c')
       ),
