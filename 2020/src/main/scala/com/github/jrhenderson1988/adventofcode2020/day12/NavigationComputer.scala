@@ -24,7 +24,7 @@ case class NavigationComputer(
     cpu.manhattanDistanceOfShip()
   }
 
-  def executeAgainstShip(instruction: Instruction): NavigationComputer = {
+  private def executeAgainstShip(instruction: Instruction): NavigationComputer = {
     instruction match {
       case Turn(direction, angle) =>turnShip(direction, angle)
       case Move(direction, value) => moveShip(direction, value)
@@ -32,7 +32,7 @@ case class NavigationComputer(
     }
   }
 
-  def executeAgainstWaypoint(instruction: Instruction): NavigationComputer = {
+  private def executeAgainstWaypoint(instruction: Instruction): NavigationComputer = {
     instruction match {
       case Turn(direction, angle) => rotateWaypoint(direction, angle)
       case Move(direction, distance) => moveWaypoint(direction, distance)
@@ -100,7 +100,7 @@ case class NavigationComputer(
     NavigationComputer(instructions, shipPosition, shipDirection, position)
   }
 
-  def manhattanDistanceOfShip(): Int = {
+  private def manhattanDistanceOfShip(): Int = {
     Math.abs(shipPosition._1) + Math.abs(shipPosition._2)
   }
 
