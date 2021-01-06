@@ -1,43 +1,51 @@
 package com.github.jrhenderson1988.adventofcode2020.day22
 
-case class Combat(player1: Player, player2: Player) {
-  private def round(): Combat = {
-    if (player1.deck.head > player2.deck.head) {
-      Combat(Player(player1.deck.drop(1) ++ List(player1.deck.head, player2.deck.head)), Player(player2.deck.drop(1)))
-    } else {
-      Combat(Player(player1.deck.drop(1)), Player(player2.deck.drop(1) ++ List(player2.deck.head, player1.deck.head)))
+trait Combat {
+  val player1: Player
+  val player2: Player
+
+  def round(): Combat
+
+  def winnersScore(): Int = {
+    play() match {
+      case Player1(player) => player.calculateScore()
+      case Player2(player) => player.calculateScore()
     }
   }
 
-  private def finished(): Boolean = {
-    player1.deck.isEmpty || player2.deck.isEmpty
-  }
-
-  private def play(): Player = {
+  def play(): Winner = {
     var game = this
     while (!game.finished()) {
       game = game.round()
     }
 
-    if (game.player1.deck.nonEmpty) {
-      game.player1
-    } else {
-      game.player2
-    }
+    game.winner()
   }
 
-  def winnersScore(): Int = {
-    play().calculateScore()
+  def finished(): Boolean = {
+    player1.deck.isEmpty || player2.deck.isEmpty
+  }
+
+  def winner(): Winner = {
+    if (player1.deck.isEmpty) {
+      Player2(player2)
+    } else if (player2.deck.isEmpty) {
+      Player1(player1)
+    } else {
+      throw new RuntimeException("No winner")
+    }
   }
 }
 
 object Combat {
-  def parse(input: String): Combat = {
+  def parse[T <: Combat](input: String, builder: (Player, Player) => T): T = {
     val players = input.trim.split("\\n\\s*\\n").map(chunk => Player.parse(chunk.linesIterator.toList)).toList
     if (players.size != 2) {
       throw new RuntimeException
     }
 
-    Combat(players.head, players.last)
+    builder(players.head, players.last)
   }
 }
+
+

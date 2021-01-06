@@ -7,7 +7,7 @@ class Runner extends Day {
   override def run(path: File): Option[Answer] = {
     Some(
       Answer(
-        Combat.parse(fileToString(path)).winnersScore().toString,
+        SimpleCombat.parse(fileToString(path)).winnersScore().toString,
         RecursiveCombat.parse(fileToString(path)).winnersScore().toString
       )
     )
