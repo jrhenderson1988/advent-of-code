@@ -2,7 +2,7 @@ package com.github.jrhenderson1988.adventofcode2020.day22
 
 import org.scalatest.FunSuite
 
-class GameTest extends FunSuite {
+class RecursiveCombatTest extends FunSuite {
   val input: String =
     """
       |Player 1:
@@ -19,13 +19,13 @@ class GameTest extends FunSuite {
       |7
       |10
       |""".stripMargin.trim
-  val game: Game = Game(Player(List(9, 2, 6, 3, 1)), Player(List(5, 8, 4, 7, 10)))
+  val game: RecursiveCombat = RecursiveCombat(Player(List(9, 2, 6, 3, 1)), Player(List(5, 8, 4, 7, 10)), Set())
 
   test("parse") {
-    assert(Game.parse(input) == game)
+    assert(RecursiveCombat.parse(input) == game)
   }
 
-  test("combatWinnersScore") {
-    assert(game.combatWinnersScore() == 306)
+  test("winnersScore") {
+    assert(game.winnersScore() == 291)
   }
 }
