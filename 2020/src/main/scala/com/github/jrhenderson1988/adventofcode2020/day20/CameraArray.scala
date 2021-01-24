@@ -5,13 +5,16 @@ case class CameraArray(tiles: List[Tile]) {
     .flatMap(tile => tile.allEdges)
     .groupBy(edge => edge)
     .map { case (edge, values) => (edge, values.size) }
+
   val edgesToTileIds: Map[Int, List[Long]] = tiles
     .flatMap(tile => tile.allEdges.map(edge => (edge -> tile.id)))
     .groupBy { case (edge, _) => edge }
     .map { case (edge, pairs) => edge -> pairs.map(_._2) }
+
   val tilesById: Map[Long, Tile] = tiles
     .map { tile => tile.id -> tile }
     .toMap
+
   val seaMonster: List[(Int, Int)] =
     """                  #
       |#    ##    ##    ###
@@ -24,6 +27,15 @@ case class CameraArray(tiles: List[Tile]) {
       }
       .foldLeft(List[(Int, Int)]()) { (acc, row) => acc ++ row }
 
+  def productOfCornerIds(): Long = getCorners.map(_.id).product
+
+  def waterRoughness(): Int = {
+    val grid = buildGrid()
+    val image = buildImageFromGrid(grid)
+    val seaMonsterPointCount = orientAndCountSeaMonsterPoints(image)
+    image.cells.map(row => row.count(cell => cell)).sum - seaMonsterPointCount
+  }
+
   def getCorners: List[Tile] = {
     tiles.filter { tile =>
       val others = tiles.diff(List(tile))
@@ -34,15 +46,6 @@ case class CameraArray(tiles: List[Tile]) {
             .count { edge => others.exists(other => other.hasMatchingEdgeFor(edge)) } == 2
         }
     }
-  }
-
-  def productOfCornerIds(): Long = getCorners.map(_.id).product
-
-  def waterRoughness(): Int = {
-    val grid = buildGrid()
-    val image = buildImageFromGrid(grid)
-    val seaMonsterPointCount = (orientAndCountSeaMonsterPoints(image))
-    image.cells.map(row => row.count(cell => cell)).sum - seaMonsterPointCount
   }
 
   private def buildImageFromGrid(grid: List[List[Tile]]): Tile = {
@@ -73,87 +76,53 @@ case class CameraArray(tiles: List[Tile]) {
 
     (0 until gridSize).foreach { y =>
       (0 until gridSize).foreach { x =>
-        grid(y)(x) =
-          if (x == 0 && y == 0) { // TOP LEFT
+        grid(y)(x) = (x, y) match {
+          // Top left corner
+          case (x, y) if x == 0 && y == 0 =>
             orientTile(tilesById(corners.head), tile =>
               edgeCounts(tile.getEdge(Edge.LEFT)) == 1 &&
                 edgeCounts(tile.getEdge(Edge.TOP)) == 1 &&
                 edgeCounts(tile.getEdge(Edge.RIGHT)) > 1 &&
                 edgeCounts(tile.getEdge(Edge.BOTTOM)) > 1
             )
-          } else if (x == gridSize - 1 && y == 0) { // Top right, look at the tile to the left, ensure it is a corner
-            //            val (targetEdge, tile) = findTarget(Edge.LEFT, x, y, grid, placed, id => corners.contains(id))
-            //            orientTile(tile, t => t.getEdge(Edge.LEFT) == targetEdge && edgeCounts(tile.getEdge(Edge.BOTTOM)) > 1)
-            val targetEdge = grid(y)(x - 1).getOppositeEdge(Edge.RIGHT)
-            val possibleTargets = edgesToTileIds(targetEdge).diff(placed).filter(targetId => corners.contains(targetId))
-            if (possibleTargets.size != 1) {
-              throw new RuntimeException("Top right corner does not have exactly one possible target")
-            }
+
+          // Top right corner
+          case (x, y) if x == gridSize - 1 && y == 0 =>
+            val (targetEdge, tile) = findTarget(Edge.LEFT, x, y, grid, placed, id => corners.contains(id))
+            orientTile(tile, t => t.getEdge(Edge.LEFT) == targetEdge && edgeCounts(tile.getEdge(Edge.BOTTOM)) > 1)
+
+          // Bottom right corner
+          case (x, y) if x == gridSize - 1 && y == gridSize - 1 =>
+            val (targetEdges, tile) = findTargets(List(Edge.LEFT, Edge.TOP), x, y, grid, placed, id => corners.contains(id))
+            orientTile(tile, t => t.getEdge(Edge.TOP) == targetEdges.last && t.getEdge(Edge.LEFT) == targetEdges.head)
+
+          // Bottom left corner
+          case (x, y) if x == 0 && y == gridSize - 1 =>
+            val (targetEdge, tile) = findTarget(Edge.TOP, x, y, grid, placed, id => corners.contains(id))
             orientTile(
-              tilesById(possibleTargets.head),
-              tile => tile.getEdge(Edge.LEFT) == targetEdge && edgeCounts(tile.getEdge(Edge.BOTTOM)) > 1
+              tile,
+              t => t.getEdge(Edge.TOP) == targetEdge && edgeCounts(t.getEdge(Edge.RIGHT)) > 1
             )
-          } else if (x == gridSize - 1 && y == gridSize - 1) { // Bottom right, look at the tile to the left and above, ensure it is a corner
-            val targetLeft = grid(y)(x - 1).getOppositeEdge(Edge.RIGHT)
-            val targetAbove = grid(y - 1)(x).getOppositeEdge(Edge.BOTTOM)
-            val possibleTargetsLeft = edgesToTileIds(targetLeft).diff(placed)
-            val possibleTargetsAbove = edgesToTileIds(targetAbove).diff(placed)
-            val possibleTargets = possibleTargetsLeft.intersect(possibleTargetsAbove).filter(targetId => corners.contains(targetId))
-            if (possibleTargets.size != 1) {
-              throw new RuntimeException("Bottom right corner does not have exactly one possible target")
-            }
+
+          // Top row, non-corners
+          case (x, y) if y == 0 =>
+            val (targetEdge, tile) = findTarget(Edge.LEFT, x, y, grid, placed, _ => true)
+            orientTile(tile, t => t.getEdge(Edge.LEFT) == targetEdge)
+
+          // Left edge
+          case (x, y) if x == 0 =>
+            val (targetEdge, tile) = findTarget(Edge.TOP, x, y, grid, placed, _ => true)
+            orientTile(tile, t => t.getEdge(Edge.TOP) == targetEdge)
+
+          // Others
+          case (x, y) =>
+            val (targetEdges, tile) = findTargets(List(Edge.LEFT, Edge.TOP), x, y, grid, placed, _ => true)
             orientTile(
-              tilesById(possibleTargets.head),
-              tile => tile.getEdge(Edge.TOP) == targetAbove && tile.getEdge(Edge.LEFT) == targetLeft
+              tile,
+              t => t.getEdge(Edge.LEFT) == targetEdges.head && t.getEdge(Edge.TOP) == targetEdges.last
             )
-          } else if (x == 0 && y == gridSize - 1) { // Bottom left: Look at the tile above, ensure it is a corner
-            //            val (targetEdge, tile) = findTarget(Edge.TOP, x, y, grid, placed, id => corners.contains(id))
-            //            orientTile(tile, t => t.getEdge(Edge.TOP) == targetEdge && edgeCounts(tile.getEdge(Edge.RIGHT)) > 1)
-            val targetEdge = grid(y - 1)(x).getOppositeEdge(Edge.BOTTOM)
-            val possibleTargets = edgesToTileIds(targetEdge).diff(placed).filter(targetId => corners.contains(targetId))
-            if (possibleTargets.size != 1) {
-              throw new RuntimeException("Bottom left corner does not have exactly one possible target")
-            }
-            orientTile(
-              tilesById(possibleTargets.head),
-              tile => tile.getEdge(Edge.TOP) == targetEdge && edgeCounts(tile.getEdge(Edge.RIGHT)) > 1
-            )
-          }
-          else if (y == 0) { // First row, non-corner, only check left,  Get the right side of the tile to the left
-            //            val (targetEdge, tile) = findTarget(Edge.LEFT, x, y, grid, placed, _ => true)
-            //            orientTileByLeftEdge(tile, targetEdge)
-            val targetEdge = grid(y)(x - 1).getOppositeEdge(Edge.RIGHT)
-            val possibleTargets = edgesToTileIds(targetEdge).diff(placed)
-            if (possibleTargets.size != 1) {
-              throw new RuntimeException("Tile in top row does not have exactly one possible target")
-            } else {
-              orientTile(tilesById(possibleTargets.head), t => t.getEdge(Edge.LEFT) == targetEdge)
-            }
-          } else if (x == 0) { // Left edge but not top row, check above
-            //            val (targetEdge, tile) = findTarget(Edge.TOP, x, y, grid, placed, _ => true)
-            //            orientTile(tile, t => t.getEdge(Edge.TOP) == targetEdge)
-            val targetEdge = grid(y - 1)(x).getOppositeEdge(Edge.BOTTOM)
-            val possibleTargets = edgesToTileIds(targetEdge).diff(placed)
-            if (possibleTargets.size != 1) {
-              throw new RuntimeException("Tile in left edge does not have exactly one possible target")
-            } else {
-              orientTile(tilesById(possibleTargets.head), tile => tile.getEdge(Edge.TOP) == targetEdge)
-            }
-          } else { // All other tiles that are not in top row or left edge
-            val targetLeft = grid(y)(x - 1).getOppositeEdge(Edge.RIGHT)
-            val targetAbove = grid(y - 1)(x).getOppositeEdge(Edge.BOTTOM)
-            val possibleTargetsLeft = edgesToTileIds(targetLeft).diff(placed)
-            val possibleTargetsAbove = edgesToTileIds(targetAbove).diff(placed)
-            val possibleTargets = possibleTargetsLeft.intersect(possibleTargetsAbove)
-            if (possibleTargets.size != 1) {
-              throw new RuntimeException(s"Tile does not have exactly one possible target")
-            } else {
-              orientTile(
-                tilesById(possibleTargets.head),
-                tile => tile.getEdge(Edge.LEFT) == targetLeft && tile.getEdge(Edge.TOP) == targetAbove
-              )
-            }
-          }
+        }
+
         placed = placed ++ List(grid(y)(x).id)
       }
     }
@@ -161,27 +130,40 @@ case class CameraArray(tiles: List[Tile]) {
     grid.map(_.toList).toList
   }
 
-  private def findTarget(edge: Edge, x: Int, y: Int, grid: Array[Array[Tile]], placed: List[Long], filter: Long => Boolean): (Int, Tile) = {
-    val (dx, dy) = edge match {
-      case Edge.TOP => (0, -1)
-      case Edge.RIGHT => (1, 0)
-      case Edge.BOTTOM => (0, 1)
-      case Edge.LEFT => (-1, 0)
+  private def findTargets(edges: List[Edge], x: Int, y: Int, grid: Array[Array[Tile]], placed: List[Long], filter: Long => Boolean): (List[Int], Tile) = {
+    val targetEdges = edges.map { edge =>
+      val (dx, dy) = edge match {
+        case Edge.TOP => (0, -1)
+        case Edge.RIGHT => (1, 0)
+        case Edge.BOTTOM => (0, 1)
+        case Edge.LEFT => (-1, 0)
+      }
+
+      grid(y + dy)(x + dx).getOppositeEdge(
+        edge match {
+          case Edge.TOP => Edge.BOTTOM
+          case Edge.RIGHT => Edge.LEFT
+          case Edge.BOTTOM => Edge.TOP
+          case Edge.LEFT => Edge.RIGHT
+        }
+      )
     }
 
-    val targetEdge = grid(y + dy)(x + dx).getOppositeEdge(edge match {
-      case Edge.TOP => Edge.BOTTOM
-      case Edge.RIGHT => Edge.LEFT
-      case Edge.BOTTOM => Edge.TOP
-      case Edge.LEFT => Edge.RIGHT
-    })
+    val possibleTargets = targetEdges.map(edge => edgesToTileIds(edge))
+      .reduce((a, b) => a.intersect(b))
+      .diff(placed)
+      .filter(id => filter(id))
 
-    val possibleTargets = edgesToTileIds(targetEdge).diff(placed).filter(id => filter(id))
     if (possibleTargets.size != 1) {
-      throw new RuntimeException("Bottom left corner does not have exactly one possible target")
+      throw new RuntimeException("Tile does not have exactly one possible target")
     }
 
-    (targetEdge, tilesById(possibleTargets.head))
+    (targetEdges, tilesById(possibleTargets.head))
+  }
+
+  private def findTarget(edge: Edge, x: Int, y: Int, grid: Array[Array[Tile]], placed: List[Long], filter: Long => Boolean): (Int, Tile) = {
+    val (targetEdges, tile) = findTargets(List(edge), x, y, grid, placed, filter)
+    (targetEdges.head, tile)
   }
 
   private def orientTile(tile: Tile, predicate: Tile => Boolean): Tile = {
