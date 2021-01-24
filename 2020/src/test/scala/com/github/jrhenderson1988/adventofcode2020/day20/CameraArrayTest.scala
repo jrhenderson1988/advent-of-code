@@ -118,4 +118,8 @@ class CameraArrayTest extends FunSuite {
   test("productOfCornerIds") {
     assert(ca.productOfCornerIds() == 20899048083289L)
   }
+
+  test("waterRoughness") {
+    assert(ca.waterRoughness() == 273)
+  }
 }

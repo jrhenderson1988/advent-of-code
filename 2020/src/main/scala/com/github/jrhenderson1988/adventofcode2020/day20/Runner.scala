@@ -10,7 +10,7 @@ class Runner extends Day {
     Some(
       Answer(
         ca.productOfCornerIds().toString,
-        "TODO",
+        ca.waterRoughness().toString,
       )
     )
   }
