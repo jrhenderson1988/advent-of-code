@@ -1,10 +1,8 @@
-mod assembunny;
-
 use std::path::Path;
 use crate::utils::Answers;
 use std::fs::read_to_string;
-use crate::day12::assembunny::instruction::Instruction;
-use crate::day12::assembunny::computer::Computer;
+use crate::utils::assembunny::instruction::Instruction;
+use crate::utils::assembunny::computer::Computer;
 
 pub fn run(path: &Path) -> Result<Answers, &'static str> {
     let content = read_to_string(path).unwrap();

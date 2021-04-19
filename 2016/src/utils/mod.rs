@@ -1,4 +1,5 @@
 pub mod bit_vec;
+pub mod assembunny;
 
 use std::fmt::{Display, Formatter, Debug};
 
