@@ -102,7 +102,7 @@ impl Computer {
 
     pub fn set_register_value(&mut self, register: RegisterId, value: i32) {
         if !self.registers.contains_key(&register) {
-            panic!(format!("Invalid register '{}'", register))
+            panic!("Invalid register '{}'", register)
         }
 
         self.registers.insert(register, value);
