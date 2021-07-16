@@ -20,8 +20,13 @@ impl Computer {
     }
 
     pub fn execute(&mut self, program: &Vec<Instruction>) {
+        self.execute_until(program, &vec![]);
+    }
+
+    pub fn execute_until(&mut self, program: &Vec<Instruction>, until: &Vec<Vec<i32>>) -> bool {
         let mut instructions: Vec<Instruction> = program.to_owned().to_vec();
         let program_length = instructions.len();
+        let mut output: Vec<i32> = vec![];
         while self.instruction_pointer < program_length {
             let instruction = instructions.get(self.instruction_pointer).unwrap();
             match instruction {
@@ -79,6 +84,7 @@ impl Computer {
                             Instruction::Toggle(x) => Instruction::Increment(x.clone()),
                             Instruction::Jump(x, y) => Instruction::Copy(x.clone(), y.clone()),
                             Instruction::Copy(x, y) => Instruction::Jump(x.clone(), y.clone()),
+                            Instruction::Transmit(x) => Instruction::Transmit(x.clone()),
                         };
 
                         if let Some(instruction) = instructions.get_mut(idx) {
@@ -86,10 +92,34 @@ impl Computer {
                         }
                     }
                 }
+                Instruction::Transmit(x) => {
+                    if !until.is_empty() {
+                        let value = self.get_value_for_value_or_register(x);
+                        output.push(value);
+
+                        let mut still_valid = false;
+                        for target in until {
+                            if target.eq(&output) {
+                                return true;
+                            }
+
+                            if output.as_slice().eq(&target[..output.len()]) {
+                                still_valid = true;
+                                break;
+                            }
+                        }
+
+                        if !still_valid {
+                            return false;
+                        }
+                    }
+                }
             }
 
             self.instruction_pointer += 1;
         }
+
+        false
     }
 
     pub fn get_register_value(&self, register: RegisterId) -> Option<i32> {

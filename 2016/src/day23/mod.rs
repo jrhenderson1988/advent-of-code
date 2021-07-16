@@ -15,7 +15,7 @@ pub fn run(path: &Path) -> Result<Answers, &'static str> {
     let part1 = cpu.get_register_value('a');
 
     // No need for manual analysis and optimising the loop by hand when Rust is
-    // able to work out the answer in a few of minutes!
+    // able to work out the answer in a few minutes!
     let mut cpu = Computer::new(vec!['a', 'b', 'c', 'd']);
     cpu.set_register_value('a', 12);
     cpu.execute(&instructions);

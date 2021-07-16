@@ -11,6 +11,7 @@ pub enum Instruction {
     Decrement(ValueOrRegister),
     Jump(ValueOrRegister, ValueOrRegister),
     Toggle(ValueOrRegister),
+    Transmit(ValueOrRegister)
 }
 
 impl Display for Instruction {
@@ -21,6 +22,7 @@ impl Display for Instruction {
             Instruction::Decrement(x) => format!("dec {}", x),
             Instruction::Jump(x, y) => format!("jnz {} {}", x, y),
             Instruction::Toggle(x) => format!("tgl {}", x),
+            Instruction::Transmit(x) => format!("out {}", x),
         })
     }
 }
@@ -95,6 +97,13 @@ impl FromStr for Instruction {
                 }
                 let register: ValueOrRegister = parts.get(1).unwrap().parse().unwrap();
                 Ok(Instruction::Toggle(register))
+            }
+            "out" => {
+                if parts.len() != 2 {
+                    panic!("Invalid 'out' instruction")
+                }
+                let register: ValueOrRegister = parts.get(1).unwrap().parse().unwrap();
+                Ok(Instruction::Transmit(register))
             }
             _ => panic!("Unknown instruction")
         }
