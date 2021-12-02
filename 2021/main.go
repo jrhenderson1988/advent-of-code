@@ -3,12 +3,14 @@ package main
 import (
 	"aoc2021/days"
 	"aoc2021/days/d01"
+	"aoc2021/days/d02"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -26,20 +28,32 @@ func main() {
 		log.Fatalf("Could not load input file: %s\n", err.Error())
 	}
 
+	fmt.Printf("=== Day %d ===\n", day)
+
 	input := string(inputBytes)
+
+	start := timeInMillis()
 	result, err := execute(day, input)
 	if err != nil {
 		log.Fatalf("Error: %s\n", err.Error())
 	}
+	finish := timeInMillis()
 
-	fmt.Printf("Day %d:\n%s\n", day, result)
+	fmt.Println(result)
+	fmt.Printf("Took: %dms", finish - start)
 }
 
 func execute(day int, input string) (days.Result, error) {
 	switch day {
 	case 1:
 		return d01.Execute(input)
+	case 2:
+		return d02.Execute(input)
 	default:
 		return days.Result{}, errors.New(fmt.Sprintf("day %d is not yet implemented", day))
 	}
+}
+
+func timeInMillis() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
