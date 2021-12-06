@@ -24,7 +24,7 @@ func Execute(input string) (days.Result, error) {
 		return days.EmptyResult(), err
 	}
 
-	return days.NewResult(common.IntToString(finalScore), common.IntToString(finalScoreOfLosingBoard)), nil
+	return days.NewIntResult(finalScore, finalScoreOfLosingBoard), nil
 }
 
 func CalculateFinalScoreOfWinningBoard(calls []int, boards []*Board) (int, error) {

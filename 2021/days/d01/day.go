@@ -18,10 +18,7 @@ func Execute(input string) (days.Result, error) {
 		return days.EmptyResult(), err
 	}
 
-	return days.NewResult(
-		common.IntToString(totalIncreases),
-		common.IntToString(totalIncreasesWithSlidingWindow),
-	), nil
+	return days.NewIntResult(totalIncreases, totalIncreasesWithSlidingWindow), nil
 }
 
 func TotalIncreases(lines []string) (int, error) {

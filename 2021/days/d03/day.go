@@ -23,10 +23,7 @@ func Execute(input string) (days.Result, error) {
 		return days.EmptyResult(), err
 	}
 
-	result := days.NewResult(
-		common.IntToString(powerConsumption),
-		common.IntToString(lifeSupportRating),
-	)
+	result := days.NewIntResult(powerConsumption, lifeSupportRating)
 	return result, nil
 }
 

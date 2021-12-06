@@ -30,7 +30,7 @@ func Execute(input string) (days.Result, error) {
 	part1 := CalculateBasicDistanceFromOrigin(instructions)
 	part2 := CalculateMultiplicativeDistanceFromOrigin(instructions)
 
-	return days.NewResult(common.IntToString(part1), common.IntToString(part2)), nil
+	return days.NewIntResult(part1, part2), nil
 }
 
 func CalculateBasicDistanceFromOrigin(instructions []instruction) int {
