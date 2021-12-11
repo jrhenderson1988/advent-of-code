@@ -10,6 +10,7 @@ import (
 	"aoc2021/days/d06"
 	"aoc2021/days/d07"
 	"aoc2021/days/d08"
+	"aoc2021/days/d09"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -67,6 +68,8 @@ func execute(day int, input string) (days.Result, error) {
 		return d07.Execute(input)
 	case 8:
 		return d08.Execute(input)
+	case 9:
+		return d09.Execute(input)
 	default:
 		return days.Result{}, errors.New(fmt.Sprintf("day %d is not yet implemented", day))
 	}
