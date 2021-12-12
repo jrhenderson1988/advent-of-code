@@ -149,7 +149,6 @@ func (d Diagnostic) OutputAsNumber() int {
 	return outputNumber
 }
 
-
 //   2:      3:
 //  aaaa    aaaa
 // .    c  .    c

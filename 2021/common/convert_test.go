@@ -9,7 +9,7 @@ import (
 func TestIntToString(t *testing.T) {
 	t.Run("valid integers", func(t *testing.T) {
 		tests := []struct {
-			input int
+			input    int
 			expected string
 		}{
 			{input: 123, expected: "123"},

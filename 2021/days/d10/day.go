@@ -58,7 +58,7 @@ func CalculateMiddleAutoCompletionScore(subsystem [][]rune) int {
 		return scores[a] < scores[b]
 	})
 
-	return scores[len(scores) / 2]
+	return scores[len(scores)/2]
 }
 
 func findFirstIllegalCharacter(line []rune) (rune, bool) {
@@ -93,7 +93,7 @@ func findAutocompleteSequence(line []rune) []rune {
 
 	sequence := make([]rune, len(stack))
 	for i := 0; i < len(stack); i++ {
-		sequence[i] = getClosingCharFor(stack[len(stack) - 1 - i])
+		sequence[i] = getClosingCharFor(stack[len(stack)-1-i])
 	}
 
 	return sequence

@@ -40,7 +40,7 @@ func CalculateMinimumRisingFuelCostToAlign(crabs []int) (int, error) {
 	})
 }
 
-func calculateFuelCostToAlign(crabs []int, calcFuelCost func (int, int) int) (int, error) {
+func calculateFuelCostToAlign(crabs []int, calcFuelCost func(int, int) int) (int, error) {
 	min, max := crabs[0], crabs[0]
 	for _, crab := range crabs[1:] {
 		if crab < min {
@@ -83,4 +83,3 @@ func cloneCrabs(crabs []int) []int {
 	copy(clone, crabs)
 	return clone
 }
-

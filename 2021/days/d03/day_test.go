@@ -44,7 +44,6 @@ var input = [][]bool{
 
 //01010
 
-
 func TestCalculatePowerConsumption(t *testing.T) {
 	pc, err := CalculatePowerConsumption(input)
 

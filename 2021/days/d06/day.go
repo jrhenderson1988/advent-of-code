@@ -63,5 +63,3 @@ func TotalAfterDays(input []int, days int) int {
 func parseInput(input string) ([]int, error) {
 	return common.StringsToInts(strings.Split(strings.TrimSpace(input), ","))
 }
-
-

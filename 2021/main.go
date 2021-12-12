@@ -32,7 +32,7 @@ func main() {
 		log.Fatalln("Expected day to be an integer")
 	}
 
-	inputBytes, err  := ioutil.ReadFile(fmt.Sprintf("inputs/%d.txt", day))
+	inputBytes, err := ioutil.ReadFile(fmt.Sprintf("inputs/%d.txt", day))
 	if err != nil {
 		log.Fatalf("Could not load input file: %s\n", err.Error())
 	}
@@ -49,7 +49,7 @@ func main() {
 	finish := timeInMillis()
 
 	fmt.Println(result)
-	fmt.Printf("Took: %dms", finish - start)
+	fmt.Printf("Took: %dms", finish-start)
 }
 
 func execute(day int, input string) (days.Result, error) {
