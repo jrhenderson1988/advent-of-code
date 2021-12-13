@@ -6,6 +6,26 @@ import (
 	"testing"
 )
 
+func TestNormalizeLineBreaks(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected string
+	}{
+		{input: "", expected: ""},
+		{input: "foo\nbar", expected: "foo\nbar"},
+		{input: "foo\r\nbar", expected: "foo\nbar"},
+		{input: "foo\rbar", expected: "foo\nbar"},
+		{input: "foo\r\nbar\rbaz\nqux", expected: "foo\nbar\nbaz\nqux"},
+		{input: "foo\r\nbar\rbaz\nqux\r\r\r\r", expected: "foo\nbar\nbaz\nqux\n\n\n\n"},
+		{input: "foo\r\nbar\rbaz\nqux\r\r\r\r\n", expected: "foo\nbar\nbaz\nqux\n\n\n\n"},
+	}
+
+	for _, tc := range testCases {
+		output := common.NormalizeLineBreaks(tc.input)
+		assert.Equal(t, tc.expected, output)
+	}
+}
+
 func TestSplitLines(t *testing.T) {
 	t.Run("empty string", func(t *testing.T) {
 		result := common.SplitLines("")
