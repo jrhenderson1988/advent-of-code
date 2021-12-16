@@ -17,6 +17,16 @@ import (
 	"aoc2021/days/d13"
 	"aoc2021/days/d14"
 	"aoc2021/days/d15"
+	"aoc2021/days/d16"
+	"aoc2021/days/d17"
+	"aoc2021/days/d18"
+	"aoc2021/days/d19"
+	"aoc2021/days/d20"
+	"aoc2021/days/d21"
+	"aoc2021/days/d22"
+	"aoc2021/days/d23"
+	"aoc2021/days/d24"
+	"aoc2021/days/d25"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -88,6 +98,27 @@ func execute(day int, input string) (days.Result, error) {
 		return d14.Execute(input)
 	case 15:
 		return d15.Execute(input)
+	case 16:
+		return d16.Execute(input)
+	case 17:
+		return d17.Execute(input)
+	case 18:
+		return d18.Execute(input)
+	case 19:
+		return d19.Execute(input)
+	case 20:
+		return d20.Execute(input)
+	case 21:
+		return d21.Execute(input)
+	case 22:
+		return d22.Execute(input)
+	case 23:
+		return d23.Execute(input)
+	case 24:
+		return d24.Execute(input)
+	case 25:
+		return d25.Execute(input)
+
 	default:
 		return days.Result{}, errors.New(fmt.Sprintf("day %d is not yet implemented", day))
 	}
