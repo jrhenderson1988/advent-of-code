@@ -63,4 +63,3 @@ func (mpq *MinPriorityQueue) Pop() coord {
 	obj := heap.Pop(&mpq.pq).(*item)
 	return obj.point
 }
-
