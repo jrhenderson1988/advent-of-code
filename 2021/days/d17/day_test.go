@@ -5,12 +5,14 @@ import (
 	"testing"
 )
 
-func TestPart1(t *testing.T) {
-	p1 := Part1("test")
-	assert.Equal(t, -1, p1)
+func TestCalculateHighestTrajectoryToLandInTrench(t *testing.T) {
+	target := newTargetArea(20, 30, -10, -5)
+	highestY := CalculateHighestYPositionToStillLandInTarget(target)
+	assert.Equal(t, 45, highestY)
 }
 
-func TestPart2(t *testing.T) {
-	p2 := Part2("test")
-	assert.Equal(t, -1, p2)
+func TestCalculateTotalDistinctInitialVelocities(t *testing.T) {
+	target := newTargetArea(20, 30, -10, -5)
+	totalInitialVelocities := CalculateTotalDistinctInitialVelocities(target)
+	assert.Equal(t, 112, totalInitialVelocities)
 }
