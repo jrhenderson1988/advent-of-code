@@ -1,27 +1,55 @@
 package d18
 
-import "aoc2021/days"
+import (
+	"aoc2021/common"
+	"aoc2021/days"
+	"strings"
+)
 
 func Execute(input string) (days.Result, error) {
-	value, err := parseInput(input)
+	numbers, err := parseInput(input)
 	if err != nil {
 		return days.EmptyResult(), err
 	}
 
-	p1 := Part1(value)
-	p2 := Part2(value)
+	magnitudeOfFinalSum := CalculateMagnitudeOfFinalSum(numbers)
+	largestMagnitudeFromTwoNumbers := LargestMagnitudeFromTwoNumbers(numbers)
 
-	return days.NewIntResult(p1, p2), nil
+	return days.NewIntResult(magnitudeOfFinalSum, largestMagnitudeFromTwoNumbers), nil
 }
 
-func parseInput(input string) (string, error) {
-	return input, nil
+func parseInput(input string) ([]*Number, error) {
+	numbers := make([]*Number, 0)
+	for _, line := range common.SplitLines(strings.TrimSpace(input)) {
+		num, err := ParseNumber(strings.TrimSpace(line))
+		if err != nil {
+			return nil, err
+		}
+		numbers = append(numbers, num)
+	}
+	return numbers, nil
 }
 
-func Part1(input string) int {
-	return -1
+func CalculateMagnitudeOfFinalSum(numbers []*Number) int {
+	sum := numbers[0]
+	for _, num := range numbers[1:] {
+		sum = sum.Add(num)
+	}
+	return sum.Magnitude()
 }
 
-func Part2(input string) int {
-	return -1
+func LargestMagnitudeFromTwoNumbers(numbers []*Number) int {
+	largest := 0
+	for i, a := range numbers {
+		for j, b := range numbers {
+			if i != j {
+				sum := a.Add(b).Magnitude()
+				if sum > largest {
+					largest = sum
+				}
+			}
+		}
+	}
+
+	return largest
 }
