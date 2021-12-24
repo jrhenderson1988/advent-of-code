@@ -7,12 +7,57 @@ import (
 )
 
 type Scanner struct {
-	id      int
-	beacons []Beacon
+	id           int
+	orientations []map[Point]struct{}
 }
 
-func NewScanner(id int, beacons []Beacon) Scanner {
-	return Scanner{id, beacons}
+func NewScanner(id int, points map[Point]struct{}) Scanner {
+	return Scanner{id: id, orientations: createOrientations(points)}
+}
+
+func createOrientations(points map[Point]struct{}) []map[Point]struct{} {
+	orientations := make([]map[Point]struct{}, 24)
+
+	orientations[0] = transform(points, func(x, y, z int) (int, int, int) { return x, y, z })
+	orientations[1] = transform(points, func(x, y, z int) (int, int, int) { return y, z, x })
+	orientations[2] = transform(points, func(x, y, z int) (int, int, int) { return z, x, y })
+	orientations[3] = transform(points, func(x, y, z int) (int, int, int) { return z, y, -x })
+	orientations[4] = transform(points, func(x, y, z int) (int, int, int) { return y, x, -z })
+	orientations[5] = transform(points, func(x, y, z int) (int, int, int) { return x, z, -y })
+
+	orientations[6] = transform(points, func(x, y, z int) (int, int, int) { return x, -y, -z })
+	orientations[7] = transform(points, func(x, y, z int) (int, int, int) { return y, -z, -x })
+	orientations[8] = transform(points, func(x, y, z int) (int, int, int) { return z, -x, -y })
+	orientations[9] = transform(points, func(x, y, z int) (int, int, int) { return z, -y, x })
+	orientations[10] = transform(points, func(x, y, z int) (int, int, int) { return y, -x, z })
+	orientations[11] = transform(points, func(x, y, z int) (int, int, int) { return x, -z, y })
+
+	orientations[12] = transform(points, func(x, y, z int) (int, int, int) { return -x, y, -z })
+	orientations[13] = transform(points, func(x, y, z int) (int, int, int) { return -y, z, -x })
+	orientations[14] = transform(points, func(x, y, z int) (int, int, int) { return -z, x, -y })
+	orientations[15] = transform(points, func(x, y, z int) (int, int, int) { return -z, y, x })
+	orientations[16] = transform(points, func(x, y, z int) (int, int, int) { return -y, x, z })
+	orientations[17] = transform(points, func(x, y, z int) (int, int, int) { return -x, z, y })
+
+	orientations[18] = transform(points, func(x, y, z int) (int, int, int) { return -x, -y, z })
+	orientations[19] = transform(points, func(x, y, z int) (int, int, int) { return -y, -z, x })
+	orientations[20] = transform(points, func(x, y, z int) (int, int, int) { return -z, -x, y })
+	orientations[21] = transform(points, func(x, y, z int) (int, int, int) { return -z, -y, -x })
+	orientations[22] = transform(points, func(x, y, z int) (int, int, int) { return -y, -x, -z })
+	orientations[23] = transform(points, func(x, y, z int) (int, int, int) { return -x, -z, -y })
+
+	return orientations
+}
+
+type transformFunc func(x, y, z int) (int, int, int)
+
+func transform(points map[Point]struct{}, transform transformFunc) map[Point]struct{} {
+	transformations := make(map[Point]struct{}, len(points))
+	for b := range points {
+		x, y, z := transform(b.x, b.y, b.z)
+		transformations[NewPoint(x, y, z)] = struct{}{}
+	}
+	return transformations
 }
 
 func ParseScanner(input string) (Scanner, error) {
@@ -26,82 +71,22 @@ func ParseScanner(input string) (Scanner, error) {
 		return Scanner{}, err
 	}
 
-	beacons := make([]Beacon, 0)
+	points := make(map[Point]struct{}, 0)
 	for _, line := range lines[1:] {
-		beacon, err := ParseBeacon(line)
+		pt, err := ParsePoint(line)
 		if err != nil {
 			return Scanner{}, err
 		}
-		beacons = append(beacons, beacon)
+		points[pt] = struct{}{}
 	}
 
-	return NewScanner(id, beacons), nil
+	return NewScanner(id, points), nil
 }
 
-func (s Scanner) Orientations() []Scanner {
-	scanners := make([]Scanner, 24)
-
-	scanners[0] = s.transform(func(x, y, z int) (int, int, int) { return x, y, z })
-	scanners[1] = s.transform(func(x, y, z int) (int, int, int) { return y, z, x })
-	scanners[2] = s.transform(func(x, y, z int) (int, int, int) { return z, x, y })
-	scanners[3] = s.transform(func(x, y, z int) (int, int, int) { return z, y, -x })
-	scanners[4] = s.transform(func(x, y, z int) (int, int, int) { return y, x, -z })
-	scanners[5] = s.transform(func(x, y, z int) (int, int, int) { return x, z, -y })
-
-	scanners[6] = s.transform(func(x, y, z int) (int, int, int) { return x, -y, -z })
-	scanners[7] = s.transform(func(x, y, z int) (int, int, int) { return y, -z, -x })
-	scanners[8] = s.transform(func(x, y, z int) (int, int, int) { return z, -x, -y })
-	scanners[9] = s.transform(func(x, y, z int) (int, int, int) { return z, -y, x })
-	scanners[10] = s.transform(func(x, y, z int) (int, int, int) { return y, -x, z })
-	scanners[11] = s.transform(func(x, y, z int) (int, int, int) { return x, -z, y })
-
-	scanners[12] = s.transform(func(x, y, z int) (int, int, int) { return -x, y, -z })
-	scanners[13] = s.transform(func(x, y, z int) (int, int, int) { return -y, z, -x })
-	scanners[14] = s.transform(func(x, y, z int) (int, int, int) { return -z, x, -y })
-	scanners[15] = s.transform(func(x, y, z int) (int, int, int) { return -z, y, x })
-	scanners[16] = s.transform(func(x, y, z int) (int, int, int) { return -y, x, z })
-	scanners[17] = s.transform(func(x, y, z int) (int, int, int) { return -x, z, y })
-
-	scanners[18] = s.transform(func(x, y, z int) (int, int, int) { return -x, -y, z })
-	scanners[19] = s.transform(func(x, y, z int) (int, int, int) { return -y, -z, x })
-	scanners[20] = s.transform(func(x, y, z int) (int, int, int) { return -z, -x, y })
-	scanners[21] = s.transform(func(x, y, z int) (int, int, int) { return -z, -y, -x })
-	scanners[22] = s.transform(func(x, y, z int) (int, int, int) { return -y, -x, -z })
-	scanners[23] = s.transform(func(x, y, z int) (int, int, int) { return -x, -z, -y })
-
-	return scanners
+func (s Scanner) Points() map[Point]struct{} {
+	return s.orientations[0]
 }
 
-type transformFunc func(x, y, z int) (int, int, int)
-
-func (s Scanner) transform(transform transformFunc) Scanner {
-	beacons := make([]Beacon, len(s.beacons))
-	for i, b := range s.beacons {
-		x, y, z := transform(b.x, b.y, b.z)
-		beacons[i] = NewBeacon(x, y, z)
-	}
-	return NewScanner(s.id, beacons)
-}
-
-func (s Scanner) Equals(other Scanner) bool {
-	if s.id != other.id {
-		return false
-	}
-
-	for i, b := range s.beacons {
-		if b.x != other.beacons[i].x || b.y != other.beacons[i].y || b.z != other.beacons[i].z {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (s Scanner) String() string {
-	sb := strings.Builder{}
-	for _, b := range s.beacons {
-		sb.WriteRune('\n')
-		sb.WriteString(b.String())
-	}
-	return fmt.Sprintf("--- scanner %d ---\n%s\n\n", s.id, sb.String())
+func (s Scanner) Orientations() []map[Point]struct{} {
+	return s.orientations
 }

@@ -1,7 +1,6 @@
 package d19
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -152,16 +151,23 @@ func getTestInput() []Scanner {
 	return scanners
 }
 
+func TestFindAllBeaconsAndDeltas(t *testing.T) {
+	scanners := getTestInput()
+	beacons, deltas := FindAllBeaconsAndDeltas(scanners)
+	assert.Equal(t, 79, len(beacons))
+	assert.Equal(t, 6, len(deltas))
+}
+
 func TestCalculateTotalBeacons(t *testing.T) {
 	scanners := getTestInput()
-	totalBeacons := CalculateTotalBeacons(scanners)
+	beacons, _ := FindAllBeaconsAndDeltas(scanners)
+	totalBeacons := TotalBeacons(beacons)
 	assert.Equal(t, 79, totalBeacons)
 }
 
-func TestPart2(t *testing.T) {
+func TestCalculateMaximumManhattanDistanceBetweenScanners(t *testing.T) {
 	scanners := getTestInput()
-	a := scanners[0]
-	ors := a.Orientations()
-	b := ors[1]
-	fmt.Println(a.Equals(b))
+	_, deltas := FindAllBeaconsAndDeltas(scanners)
+	maxDistance := MaxManhattanDistanceBetweenScanners(deltas)
+	assert.Equal(t, 3621, maxDistance)
 }
