@@ -5,12 +5,35 @@ import (
 	"testing"
 )
 
-func TestPart1(t *testing.T) {
-	p1 := Part1("test")
-	assert.Equal(t, -1, p1)
+func getTestInput() (ImageEnhancementAlgorithm, Image) {
+	input := "..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#....#..#..##..##" +
+		"#..######.###...####..#..#####..##..#.#####...##.#.#..#.##..#.#......#.###" +
+		".######.###.####...#.##.##..#..#..#####.....#.#....###..#.##......#.....#." +
+		".#..#..##..#...##.######.####.####.#.#...#.......#..#.#.#...####.##.#....." +
+		".#..#...##.#.##..#...##.#.##..###.#......#.#.......#.#.#.####.###.##...#.." +
+		"...####.#..#..#.##.#....##..#.####....##...##..#...#......#.#.......#....." +
+		"..##..####..#...#.#.#...##..#.#..###..#####........#..####......#..#\n" +
+		"\n" +
+		"#..#.\n" +
+		"#....\n" +
+		"##..#\n" +
+		"..#..\n" +
+		"..###"
+	iha, image, err := parseInput(input)
+	if err != nil {
+		panic(err)
+	}
+	return iha, image
 }
 
-func TestPart2(t *testing.T) {
-	p2 := Part2("test")
-	assert.Equal(t, -1, p2)
+func TestTotalLightPixelsAfterApplyingNTimes_2(t *testing.T) {
+	iha, image := getTestInput()
+	total := TotalLightPixelsAfterApplyingNTimes(iha, image, 2)
+	assert.Equal(t, 35, total)
+}
+
+func TestTotalLightPixelsAfterApplyingNTimes_50(t *testing.T) {
+	iha, image := getTestInput()
+	total := TotalLightPixelsAfterApplyingNTimes(iha, image, 50)
+	assert.Equal(t, 3351, total)
 }
