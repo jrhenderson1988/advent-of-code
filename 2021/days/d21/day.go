@@ -13,8 +13,8 @@ func Execute(input string) (days.Result, error) {
 		return days.EmptyResult(), err
 	}
 
-	winningScore := game.Play()
-	//p2 := Part2(value)
+	deterministic := NewDeterministicDie(100)
+	winningScore := deterministic.Play(game)
 
 	return days.NewIntResult(winningScore, -1), nil
 }
@@ -45,13 +45,5 @@ func parseInput(input string) (Game, error) {
 		return Game{}, fmt.Errorf("missing starting position for one of the players")
 	}
 
-	return NewGame(10, playerOnePos, playerTwoPos, NewDeterministicDie(100)), nil
-}
-
-func Part1(input string) int {
-	return -1
-}
-
-func Part2(input string) int {
-	return -1
+	return NewGame(10, playerOnePos, playerTwoPos), nil
 }

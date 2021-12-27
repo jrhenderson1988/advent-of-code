@@ -6,7 +6,9 @@ import (
 )
 
 func TestGame_Play(t *testing.T) {
-	game := NewGame(10, 4, 8, NewDeterministicDie(100))
-	assert.Equal(t, 739785, game.Play())
+	die := NewDeterministicDie(100)
+	game := NewGame(10, 4, 8)
+	winningScore := die.Play(game)
+	assert.Equal(t, 739785, winningScore)
 }
 
