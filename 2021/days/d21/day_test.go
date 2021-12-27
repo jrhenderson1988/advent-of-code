@@ -5,12 +5,8 @@ import (
 	"testing"
 )
 
-func TestPart1(t *testing.T) {
-	p1 := Part1("test")
-	assert.Equal(t, -1, p1)
+func TestGame_Play(t *testing.T) {
+	game := NewGame(10, 4, 8, NewDeterministicDie(100))
+	assert.Equal(t, 739785, game.Play())
 }
 
-func TestPart2(t *testing.T) {
-	p2 := Part2("test")
-	assert.Equal(t, -1, p2)
-}
