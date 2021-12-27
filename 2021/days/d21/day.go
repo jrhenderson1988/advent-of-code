@@ -16,7 +16,10 @@ func Execute(input string) (days.Result, error) {
 	deterministic := NewDeterministicDie(100)
 	winningScore := deterministic.Play(game)
 
-	return days.NewIntResult(winningScore, -1), nil
+	dirac := NewDiracDie(3)
+	totalUniversesOfWinner := dirac.Play(game)
+
+	return days.NewIntResult(winningScore, totalUniversesOfWinner), nil
 }
 
 func parseInput(input string) (Game, error) {
@@ -45,5 +48,5 @@ func parseInput(input string) (Game, error) {
 		return Game{}, fmt.Errorf("missing starting position for one of the players")
 	}
 
-	return NewGame(playerOnePos, playerTwoPos), nil
+	return NewGameFromPositions(playerOnePos, playerTwoPos), nil
 }
