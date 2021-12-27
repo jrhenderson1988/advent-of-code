@@ -45,5 +45,5 @@ func parseInput(input string) (Game, error) {
 		return Game{}, fmt.Errorf("missing starting position for one of the players")
 	}
 
-	return NewGame(10, playerOnePos, playerTwoPos), nil
+	return NewGame(playerOnePos, playerTwoPos), nil
 }

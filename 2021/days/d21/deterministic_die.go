@@ -27,19 +27,21 @@ func (dd DeterministicDie) Play(game Game) int {
 }
 
 func (dd DeterministicDie) TakeTurn(game Game) (Game, DeterministicDie) {
+	isPlayerOne := dd.totalRolls%6 == 0
+
 	player := game.playerOne
-	if game.turns%2 == 1 {
+	if !isPlayerOne {
 		player = game.playerTwo
 	}
 
 	first, die := dd.Roll()
 	second, die := die.Roll()
 	third, die := die.Roll()
-	newPosition := (player.position + first + second + third) % game.boardSize
+	newPosition := (player.position + first + second + third) % boardSize
 	player = player.MoveToPosition(newPosition)
 
 	var p1, p2 Player
-	if game.turns%2 == 1 {
+	if !isPlayerOne {
 		p1 = game.playerOne
 		p2 = player
 	} else {
@@ -48,8 +50,6 @@ func (dd DeterministicDie) TakeTurn(game Game) (Game, DeterministicDie) {
 	}
 
 	return Game{
-		boardSize: game.boardSize,
-		turns:     game.turns + 1,
 		playerOne: p1,
 		playerTwo: p2,
 	}, die
