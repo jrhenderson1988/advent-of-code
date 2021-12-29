@@ -73,4 +73,3 @@ func (dd DiracDie) Play(game Game) int {
 		return wins.playerTwo
 	}
 }
-

@@ -22,4 +22,3 @@ func NewGame(playerOne, playerTwo Player) Game {
 	}
 	return Game{playerOne, playerTwo}
 }
-

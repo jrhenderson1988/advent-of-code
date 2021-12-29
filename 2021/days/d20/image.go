@@ -87,8 +87,8 @@ func (i Image) valueAt(coord Coord) int {
 
 func (i Image) Apply(iha ImageEnhancementAlgorithm) Image {
 	newImageLightPixels := make(map[Coord]struct{})
-	for y := i.topLeft.y - 1; y <= i.bottomRight.y + 1; y++ {
-		for x := i.topLeft.x - 1; x <= i.bottomRight.x + 1; x++ {
+	for y := i.topLeft.y - 1; y <= i.bottomRight.y+1; y++ {
+		for x := i.topLeft.x - 1; x <= i.bottomRight.x+1; x++ {
 			pt := newCoord(x, y)
 			idx := i.valueAt(pt)
 			if iha.IsLight(idx) {

@@ -121,7 +121,7 @@ type pair struct {
 }
 
 func product(a map[Point]struct{}, b map[Point]struct{}) []pair {
-	prod := make([]pair, len(a) * len(b))
+	prod := make([]pair, len(a)*len(b))
 	i := 0
 	for ai := range a {
 		for bi := range b {

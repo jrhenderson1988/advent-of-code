@@ -35,7 +35,7 @@ func (b Point) Distance(other Point) int {
 }
 
 func (b Point) Delta(other Point) Point {
-	return NewPoint(b.x - other.x, b.y - other.y, b.z - other.z)
+	return NewPoint(b.x-other.x, b.y-other.y, b.z-other.z)
 }
 
 func (b Point) Subtract(other Point) Point {
