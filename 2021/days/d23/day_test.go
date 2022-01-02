@@ -5,12 +5,35 @@ import (
 	"testing"
 )
 
-func TestPart1(t *testing.T) {
-	p1 := Part1("test")
-	assert.Equal(t, -1, p1)
-}
+func TestMinimumEnergyToOrganiseAmphipods(t *testing.T) {
+	testCases := []struct {
+		input    Burrow
+		expected int
+	}{
+		{
+			input: NewBurrow(
+				[]Amphipod{None, None, None, None, None, None, None, None, None, None, None},
+				[]Amphipod{B, A},
+				[]Amphipod{C, D},
+				[]Amphipod{B, C},
+				[]Amphipod{D, A},
+			),
+			expected: 12521,
+		},
+		{
+			input: NewBurrow(
+				[]Amphipod{None, None, None, None, None, None, None, None, None, None, None},
+				[]Amphipod{B, D, D, A},
+				[]Amphipod{C, C, B, D},
+				[]Amphipod{B, B, A, C},
+				[]Amphipod{D, A, C, A},
+			),
+			expected: 44169,
+		},
+	}
 
-func TestPart2(t *testing.T) {
-	p2 := Part2("test")
-	assert.Equal(t, -1, p2)
+	for _, tc := range testCases {
+		cost := MinimumEnergyToOrganiseAmphipods(tc.input)
+		assert.Equal(t, tc.expected, cost)
+	}
 }
