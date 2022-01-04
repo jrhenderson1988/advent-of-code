@@ -1,16 +1,16 @@
 package d24
 
 import (
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"testing"
 )
 
 func TestPart1(t *testing.T) {
-	p1 := Part1("test")
-	assert.Equal(t, -1, p1)
-}
+	input := "inp w\nadd z w\nmod z 2\ndiv w 2\nadd y w\nmod y 2\ndiv w 2\nadd x w\nmod x 2\ndiv w 2\nmod w 2"
+	alu, err := parseInput(input)
+	if err != nil {
+		panic(err)
+	}
 
-func TestPart2(t *testing.T) {
-	p2 := Part2("test")
-	assert.Equal(t, -1, p2)
+	fmt.Println(alu)
 }
