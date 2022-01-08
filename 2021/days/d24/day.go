@@ -9,6 +9,9 @@ import (
 	"strings"
 )
 
+// The approach for the solution came from: https://www.mattkeeter.com/blog/2021-12-27-brute/
+// The primary adjustments made were to reduce memory usage by splitting it up 9 ways and taking the
+// minimum and maximum of all of those 9 sets of states.
 func Execute(input string) (days.Result, error) {
 	instructions, err := parseInput(input)
 	if err != nil {
