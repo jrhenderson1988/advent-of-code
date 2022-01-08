@@ -60,8 +60,8 @@ func maxModelNumber(program []Instruction, first int64) (uint64, uint64) {
 		case inp:
 			if !firstDone {
 				state[0].registers[instruction.a] = first
-				state[0].min = state[0].min*uint64(10)+uint64(first)
-				state[0].max = state[0].max*uint64(10)+uint64(first)
+				state[0].min = state[0].min*uint64(10) + uint64(first)
+				state[0].max = state[0].max*uint64(10) + uint64(first)
 
 				firstDone = true
 				continue
