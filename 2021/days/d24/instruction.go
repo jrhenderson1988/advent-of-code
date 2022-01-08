@@ -99,7 +99,7 @@ type Instruction struct {
 	kind       InstructionKind
 	a          Register
 	bReg       Register
-	bVal       int32
+	bVal       int64
 	isRegister bool
 }
 
@@ -164,53 +164,8 @@ func ParseInstruction(line string) (Instruction, error) {
 			kind:       instructionKind,
 			a:          a,
 			bReg:       none,
-			bVal:       int32(val),
+			bVal:       int64(val),
 			isRegister: false,
 		}, nil
 	}
-}
-
-type ALU struct {
-	registers    [4]int32
-	instructions []Instruction
-}
-
-func NewALU(w, x, y, z int32, instructions []Instruction) *ALU {
-	return &ALU{[4]int32{w, x, y, z}, instructions}
-}
-
-func (a *ALU) Execute(input [14]int32) {
-	ptr := 0
-	for _, instruction := range a.instructions {
-		switch instruction.kind {
-		case inp:
-			a.registers[instruction.a] = input[ptr]
-			ptr++
-		case add:
-			a.registers[instruction.a] += a.referenceOrLiteral(instruction)
-		case mul:
-			a.registers[instruction.a] *= a.referenceOrLiteral(instruction)
-		case div:
-			a.registers[instruction.a] /= a.referenceOrLiteral(instruction)
-		case mod:
-			a.registers[instruction.a] %= a.referenceOrLiteral(instruction)
-		case eql:
-			if a.registers[instruction.a] == a.referenceOrLiteral(instruction) {
-				a.registers[instruction.a] = 1
-			} else {
-				a.registers[instruction.a] = 0
-			}
-		}
-	}
-}
-
-func (a *ALU) referenceOrLiteral(instruction Instruction) int32 {
-	if instruction.isRegister {
-		return a.registers[instruction.bReg]
-	}
-	return instruction.bVal
-}
-
-func (a *ALU) String() string {
-	return fmt.Sprintf("ALU[%d, %d, %d, %d]", a.registers[0], a.registers[1], a.registers[2], a.registers[3])
 }
