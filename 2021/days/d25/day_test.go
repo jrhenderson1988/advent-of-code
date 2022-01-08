@@ -5,12 +5,26 @@ import (
 	"testing"
 )
 
-func TestPart1(t *testing.T) {
-	p1 := Part1("test")
-	assert.Equal(t, -1, p1)
+func getTestInput() map[point]cucumber {
+	input := "v...>>.vv>\n" +
+			".vv>>.vv..\n" +
+			">>.>v>...v\n" +
+			">>v>>.>.v.\n" +
+			"v>v.vv.v..\n" +
+			">.>>..v...\n" +
+			".vv..>.>v.\n" +
+			"v.v..>>v.v\n" +
+			"....v..v.>"
+	grid, err := parseInput(input)
+	if err != nil {
+		panic(err)
+	}
+
+	return grid
 }
 
-func TestPart2(t *testing.T) {
-	p2 := Part2("test")
-	assert.Equal(t, -1, p2)
+func TestFirstStepWithNoMoves(t *testing.T) {
+	grid := getTestInput()
+	step := FirstStepWithNoMoves(grid)
+	assert.Equal(t, 58, step)
 }
