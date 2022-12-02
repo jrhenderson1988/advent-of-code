@@ -56,8 +56,9 @@ defmodule AoC do
 
   defp execute(day, part) do
     with {:ok, module} <- get_module_for_day(day),
-         {:ok, part_functions} <- get_part_functions(part) do
-      Enum.each(part_functions, fn part_function -> evaluate(module, part_function, []) end)
+         {:ok, part_functions} <- get_part_functions(part),
+         {:ok, input} <- get_input(day) do
+      Enum.each(part_functions, fn part_function -> evaluate(module, part_function, [input]) end)
     else
       {:error, err} -> IO.puts(:stderr, err)
     end
@@ -81,7 +82,7 @@ defmodule AoC do
   end
 
   defp evaluate(module, func, args) do
-    {time, result} = time(fn -> apply(module, func, args) end)
+    {time, result} = time(module, func, args)
 
     case result do
       {:ok, answer} ->
@@ -96,8 +97,13 @@ defmodule AoC do
     IO.puts("Time taken: #{time}ms")
   end
 
-  defp time(func) do
-    {time, result} = :timer.tc(func)
-    {time, result}
+  defp time(module, function, arguments) do
+    {time, result} = :timer.tc(module, function, arguments)
+    milliseconds = time / 1000
+    {milliseconds, result}
+  end
+
+  defp get_input(day) do
+    Path.expand("./inputs/#{String.pad_leading("#{day}", 2, "0")}.txt") |> File.read()
   end
 end

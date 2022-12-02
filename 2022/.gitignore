@@ -27,3 +27,6 @@ aoc-*.tar
 
 # Ignore generated executable
 /aoc
+
+# Ignore inputs
+/inputs/**
