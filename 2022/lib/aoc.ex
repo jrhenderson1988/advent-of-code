@@ -105,7 +105,7 @@ defmodule AoC do
   end
 
   defp get_input(day) do
-    case Path.expand("./inputs/#{String.pad_leading("#{day}", 2, "0")}.txt") |> File.read() do
+    case Path.expand("./inputs/d#{String.pad_leading("#{day}", 2, "0")}.txt") |> File.read() do
       {:ok, content} -> {:ok, content}
       {:error, error} -> {:error, :input_error, error}
     end
