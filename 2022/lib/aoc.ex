@@ -60,7 +60,8 @@ defmodule AoC do
          {:ok, input} <- get_input(day) do
       Enum.each(part_functions, fn part_function -> evaluate(module, part_function, [input]) end)
     else
-      {:error, err} -> IO.puts(:stderr, err)
+      {:error, :input_error, err} -> IO.puts(:stderr, "ERROR: An input error occurred: #{err}")
+      {:error, err} -> IO.puts(:stderr, "ERROR: #{err}")
     end
   end
 
@@ -104,6 +105,9 @@ defmodule AoC do
   end
 
   defp get_input(day) do
-    Path.expand("./inputs/#{String.pad_leading("#{day}", 2, "0")}.txt") |> File.read()
+    case Path.expand("./inputs/#{String.pad_leading("#{day}", 2, "0")}.txt") |> File.read() do
+      {:ok, content} -> {:ok, content}
+      {:error, error} -> {:error, :input_error, error}
+    end
   end
 end
