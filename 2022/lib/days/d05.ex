@@ -30,40 +30,51 @@ defmodule AoC.Days.D05 do
   defp parse_stacks(content) do
     lines = AoC.Common.split_lines(content)
 
-    columns =
-      List.last(lines)
-      |> String.codepoints()
-      |> Enum.chunk_every(4)
-      |> Enum.map(&Enum.join/1)
-      |> Enum.map(&String.trim/1)
-
-    initial = Enum.reduce(columns, %{}, fn column, acc -> Map.put(acc, column, []) end)
+    columns = parse_columns(List.last(lines))
 
     stacks =
       lines
       |> Enum.reverse()
       |> Enum.drop(1)
-      |> Enum.reduce(initial, fn line, acc ->
+      |> Enum.reduce(create_initial_stacks(columns), fn line, stacks ->
         columns
         |> Enum.with_index()
-        |> Enum.map(fn {column, index} ->
-          crate =
-            String.slice(line, (index * 4)..(index * 4 + 3))
-            |> String.trim()
-            |> String.trim("[")
-            |> String.trim("]")
-
-          {crate, column}
-        end)
+        |> Enum.map(fn {column, index} -> parse_crate(line, column, index) end)
         |> Enum.filter(fn {crate, _} -> crate != "" end)
-        |> Enum.reduce(acc, fn {crate, column}, acc ->
-          existing = Map.get(acc, column)
-          updated = existing ++ [crate]
-          Map.put(acc, column, updated)
+        |> Enum.reduce(stacks, fn {crate, column}, stacks ->
+          add_crate_to_stacks(stacks, column, crate)
         end)
       end)
 
     {:ok, columns, stacks}
+  end
+
+  defp parse_columns(line) do
+    line
+    |> String.codepoints()
+    |> Enum.chunk_every(4)
+    |> Enum.map(&Enum.join/1)
+    |> Enum.map(&String.trim/1)
+  end
+
+  defp create_initial_stacks(columns) do
+    Enum.reduce(columns, %{}, fn column, acc -> Map.put(acc, column, []) end)
+  end
+
+  defp add_crate_to_stacks(stacks, column, crate) do
+    existing = Map.get(stacks, column)
+    updated = existing ++ [crate]
+    Map.put(stacks, column, updated)
+  end
+
+  defp parse_crate(line, column, index) do
+    crate =
+      String.slice(line, (index * 4)..(index * 4 + 3))
+      |> String.trim()
+      |> String.trim("[")
+      |> String.trim("]")
+
+    {crate, column}
   end
 
   defp parse_instructions(instructions_content) do
