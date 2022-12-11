@@ -10,4 +10,15 @@ defmodule AoC.Common do
   def split_by_space(content) do
     String.split(content, ~r/ +/)
   end
+
+  def combine(first, second) do
+    first
+    |> Enum.reduce([], fn row, entries ->
+      entries ++
+        (second
+         |> Enum.reduce([], fn col, entries ->
+           entries ++ [{row, col}]
+         end))
+    end)
+  end
 end
