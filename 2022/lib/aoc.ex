@@ -88,7 +88,13 @@ defmodule AoC do
     case result do
       {:ok, answer} ->
         IO.puts("==============================")
-        IO.puts("#{func}: #{answer}")
+
+        IO.puts(
+          cond do
+            is_bitstring(answer) and String.contains?(answer, "\n") -> "#{func}:\n#{answer}"
+            true -> "#{func}: #{answer}"
+          end
+        )
 
       {:error, error} ->
         IO.puts("##############################")
