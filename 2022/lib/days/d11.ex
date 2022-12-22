@@ -155,27 +155,20 @@ defmodule AoC.Days.D11 do
     monkey = Map.get(monkeys, id)
     {items, op, test, if_true, if_false} = monkey
 
-    actions =
-      items
-      |> Enum.map(fn item ->
-        new_worry_level = floor(get_worry_level(op, item) / 3)
-        target_monkey = get_target_monkey(test, if_true, if_false, new_worry_level)
-        {new_worry_level, target_monkey}
-      end)
+    items
+    |> Enum.reduce(monkeys, fn item, monkeys ->
+      new_worry_level = floor(get_worry_level(op, item) / 3)
+      target_monkey = get_target_monkey(test, if_true, if_false, new_worry_level)
 
-    monkeys =
-      actions
-      |> Enum.reduce(monkeys, fn {new_worry_level, target_monkey}, monkeys ->
-        {tm_items, tm_op, tm_test, tm_if_true, tm_if_false} = Map.get(monkeys, target_monkey)
+      {tm_items, tm_op, tm_test, tm_if_true, tm_if_false} = Map.get(monkeys, target_monkey)
 
-        Map.put(
-          monkeys,
-          target_monkey,
-          {tm_items ++ [new_worry_level], tm_op, tm_test, tm_if_true, tm_if_false}
-        )
-      end)
-
-    Map.put(monkeys, id, {[], op, test, if_true, if_false})
+      Map.put(
+        monkeys,
+        target_monkey,
+        {tm_items ++ [new_worry_level], tm_op, tm_test, tm_if_true, tm_if_false}
+      )
+    end)
+    |> Map.put(id, {[], op, test, if_true, if_false})
   end
 
   defp total_items_held_by_monkey(monkeys, id) do
