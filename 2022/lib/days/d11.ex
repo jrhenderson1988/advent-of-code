@@ -6,14 +6,21 @@ defmodule AoC.Days.D11 do
 
   def part_one(content) do
     {:ok, monkeys} = AoC.Common.normalize_lines(content) |> parse()
-    # IO.inspect(monkeys, charlists: :as_lists)
-    result = calculate_monkey_business_after_rounds(monkeys, 20)
+    result = calculate_monkey_business_after_rounds(monkeys, 20, fn wl, _, _ -> floor(wl / 3) end)
 
     {:ok, result}
   end
 
-  def part_two(_content) do
-    result = -1
+  def part_two(content) do
+    {:ok, monkeys} = AoC.Common.normalize_lines(content) |> parse()
+
+    result =
+      calculate_monkey_business_after_rounds(monkeys, 10000, fn wl, _, monkeys ->
+        divisor =
+          monkeys |> Map.values() |> Enum.map(fn {_, _, test, _, _} -> test end) |> Enum.product()
+
+        rem(wl, divisor)
+      end)
 
     {:ok, result}
   end
@@ -100,26 +107,26 @@ defmodule AoC.Days.D11 do
     end
   end
 
-  defp calculate_monkey_business_after_rounds(monkeys, rounds) do
+  defp calculate_monkey_business_after_rounds(monkeys, rounds, worry_level_adjuster) do
     totals = Map.keys(monkeys) |> Enum.reduce(%{}, fn id, acc -> Map.put(acc, id, 0) end)
 
     {totals, _} =
       0..(rounds - 1)
-      |> Enum.reduce({totals, monkeys}, fn _round, {totals, monkeys} ->
-        play_round(totals, monkeys)
+      |> Enum.reduce({totals, monkeys}, fn _, {totals, monkeys} ->
+        play_round(totals, monkeys, worry_level_adjuster)
       end)
 
     calculate_monkey_business(totals)
   end
 
-  defp play_round(totals, monkeys) do
+  defp play_round(totals, monkeys, worry_level_adjuster) do
     {totals, monkeys} =
       Map.keys(monkeys)
       |> Enum.reduce({totals, monkeys}, fn id, {totals, monkeys} ->
         totals =
           Map.put(totals, id, Map.get(totals, id) + total_items_held_by_monkey(monkeys, id))
 
-        monkeys = monkey_take_turn(monkeys, id)
+        monkeys = monkey_take_turn(monkeys, id, worry_level_adjuster)
 
         {totals, monkeys}
       end)
@@ -151,13 +158,13 @@ defmodule AoC.Days.D11 do
     end
   end
 
-  defp monkey_take_turn(monkeys, id) do
+  defp monkey_take_turn(monkeys, id, worry_level_adjuster) do
     monkey = Map.get(monkeys, id)
     {items, op, test, if_true, if_false} = monkey
 
     items
     |> Enum.reduce(monkeys, fn item, monkeys ->
-      new_worry_level = floor(get_worry_level(op, item) / 3)
+      new_worry_level = worry_level_adjuster.(get_worry_level(op, item), test, monkeys)
       target_monkey = get_target_monkey(test, if_true, if_false, new_worry_level)
 
       {tm_items, tm_op, tm_test, tm_if_true, tm_if_false} = Map.get(monkeys, target_monkey)
