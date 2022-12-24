@@ -10,11 +10,11 @@ defmodule AoC.Days.D12Test do
       assert result == {:ok, 31}
     end
 
-    # test "part 2" do
-    #   input = Path.expand("./test/days/examples/d12.txt") |> File.read!()
-    #   result = AoC.Days.D12.part_two(input)
+    test "part 2" do
+      input = Path.expand("./test/days/examples/d12.txt") |> File.read!()
+      result = AoC.Days.D12.part_two(input)
 
-    #   assert result == {:ok, 2713310158}
-    # end
+      assert result == {:ok, 29}
+    end
   end
 end

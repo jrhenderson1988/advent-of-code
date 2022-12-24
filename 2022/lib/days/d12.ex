@@ -7,7 +7,15 @@ defmodule AoC.Days.D12 do
   end
 
   def part_two(content) do
-    result = -1
+    {grid, _, target, max} = parse_grid(content)
+    result = find_steps_from_best_starting_position(grid, target, max)
+
+    ## Approach
+    # Start from any valid starting point
+    # save the points in the path in a set
+    # choose another point, if that point appears in the set, we can skip it
+    # if we find another point with path length less than current set size, that becomes the new best
+
     {:ok, result}
   end
 
@@ -52,5 +60,47 @@ defmodule AoC.Days.D12 do
       end)
       |> Enum.reduce(%{}, fn coord, map -> Map.put(map, coord, 1) end)
     end)
+  end
+
+  defp find_steps_from_best_starting_position(grid, target, max) do
+    # Brute force approach is slow but it gets the right answer in a reasonable time
+    # (approx. 30 mins on my old machine).
+
+    possible_starting_positions =
+      grid
+      |> Enum.filter(fn {_, height} -> height == ?a end)
+      |> Enum.map(fn {coord, _} -> coord end)
+
+    {steps, _} =
+      possible_starting_positions
+      |> Enum.reduce({nil, 0}, fn start, {best, counter} ->
+        counter = counter + 1
+
+        case find_path_to_end(grid, start, target, max) do
+          {:ok, path} ->
+            steps = length(path) - 1
+
+            best =
+              cond do
+                best == nil -> steps
+                steps < best -> steps
+                steps >= best -> best
+              end
+
+            # IO.puts(
+            #   "trying path #{counter} of #{length(possible_starting_positions)}. Steps: #{steps}. Best: #{best}"
+            # )
+
+            {best, counter}
+
+          {:error, _} ->
+            # IO.puts(
+            #   "trying path #{counter} of #{length(possible_starting_positions)}. Error: #{inspect(err)}"
+            # )
+            {best, counter}
+        end
+      end)
+
+    steps
   end
 end
