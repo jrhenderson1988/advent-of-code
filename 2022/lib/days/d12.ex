@@ -10,12 +10,6 @@ defmodule AoC.Days.D12 do
     {grid, _, target, max} = parse_grid(content)
     result = find_steps_from_best_starting_position(grid, target, max)
 
-    ## Approach
-    # Start from any valid starting point
-    # save the points in the path in a set
-    # choose another point, if that point appears in the set, we can skip it
-    # if we find another point with path length less than current set size, that becomes the new best
-
     {:ok, result}
   end
 

@@ -60,19 +60,15 @@ defmodule AoC.Common do
           true ->
             q = MapSet.difference(q, MapSet.new([u]))
 
-            neighbours = neighbour_fn.(u)
-
             {dist, prev} =
-              Map.keys(neighbours)
-              |> Enum.filter(fn v -> v in q end)
-              |> Enum.reduce({dist, prev}, fn v, {dist, prev} ->
-                alt = Map.get(dist, u) + Map.get(neighbours, v)
+              neighbour_fn.(u)
+              |> Enum.filter(fn {v, _} -> MapSet.member?(q, v) end)
+              |> Enum.reduce({dist, prev}, fn {v, cost}, {dist, prev} ->
+                alt = Map.get(dist, u) + cost
 
                 cond do
                   alt < Map.get(dist, v) ->
-                    dist = Map.put(dist, v, alt)
-                    prev = Map.put(prev, v, u)
-                    {dist, prev}
+                    {Map.put(dist, v, alt), Map.put(prev, v, u)}
 
                   true ->
                     {dist, prev}
