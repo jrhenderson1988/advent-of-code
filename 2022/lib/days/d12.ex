@@ -41,7 +41,7 @@ defmodule AoC.Days.D12 do
   end
 
   defp find_path_to_end(grid, start, target, {max_x, max_y}) do
-    AoC.Common.dijkstra(Map.keys(grid), start, target, fn {x, y} ->
+    AoC.Common.Dijkstra.find_path(Map.keys(grid), start, target, fn {x, y}, _ ->
       [{-1, 0}, {1, 0}, {0, -1}, {0, 1}]
       |> Enum.map(fn {ox, oy} -> {x + ox, y + oy} end)
       |> Enum.filter(fn {x, y} -> x >= 0 and x <= max_x and y >= 0 and y <= max_y end)
@@ -57,41 +57,26 @@ defmodule AoC.Days.D12 do
   end
 
   defp find_steps_from_best_starting_position(grid, target, max) do
-    # Brute force approach is slow but it gets the right answer in a reasonable time
-    # (approx. 30 mins on my old machine).
-
     possible_starting_positions =
       grid
       |> Enum.filter(fn {_, height} -> height == ?a end)
       |> Enum.map(fn {coord, _} -> coord end)
 
-    {steps, _} =
+    steps =
       possible_starting_positions
-      |> Enum.reduce({nil, 0}, fn start, {best, counter} ->
-        counter = counter + 1
-
+      |> Enum.reduce(nil, fn start, best ->
         case find_path_to_end(grid, start, target, max) do
           {:ok, path} ->
             steps = length(path) - 1
 
-            best =
-              cond do
-                best == nil -> steps
-                steps < best -> steps
-                steps >= best -> best
-              end
-
-            # IO.puts(
-            #   "trying path #{counter} of #{length(possible_starting_positions)}. Steps: #{steps}. Best: #{best}"
-            # )
-
-            {best, counter}
+            cond do
+              best == nil -> steps
+              steps < best -> steps
+              steps >= best -> best
+            end
 
           {:error, _} ->
-            # IO.puts(
-            #   "trying path #{counter} of #{length(possible_starting_positions)}. Error: #{inspect(err)}"
-            # )
-            {best, counter}
+            best
         end
       end)
 
