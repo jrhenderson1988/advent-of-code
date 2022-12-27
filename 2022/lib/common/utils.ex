@@ -1,5 +1,4 @@
 defmodule AoC.Common do
-
   def split_lines(content) do
     String.split(content, ~r/\r\n|\n|\r/)
   end
@@ -29,5 +28,9 @@ defmodule AoC.Common do
 
   def characters(str) do
     String.to_charlist(str)
+  end
+
+  def manhattan_distance({ax, ay}, {bx, by}) do
+    abs(ax - bx) + abs(ay - by)
   end
 end
