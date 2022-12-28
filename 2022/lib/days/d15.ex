@@ -7,8 +7,18 @@ defmodule AoC.Days.D15 do
     {:ok, result}
   end
 
-  def part_two(_content) do
-    result = -1
+  def part_two(content, max_coord \\ 4_000_000) do
+
+    sensors_with_distances =
+      parse(content)
+      |> get_sensors_with_distances()
+
+    possible_locations =
+      find_possible_locations_of_distress_beacon(sensors_with_distances, max_coord)
+
+    location = find_location_of_distress_beacon(sensors_with_distances, possible_locations)
+
+    result = get_tuning_frequency(location)
 
     {:ok, result}
   end
@@ -80,6 +90,46 @@ defmodule AoC.Days.D15 do
         end
 
       {leftmost, rightmost}
+    end)
+  end
+
+  defp find_perimeter({x, y}, dist) do
+    [
+      {{x - dist, y}, {1, -1}},
+      {{x, y - dist}, {1, 1}},
+      {{x + dist, y}, {-1, 1}},
+      {{x, y + dist}, {-1, -1}}
+    ]
+    |> Enum.reduce(MapSet.new(), fn {{x, y}, {dx, dy}}, set ->
+      0..dist
+      |> Enum.reduce(set, fn amt, set -> MapSet.put(set, {x + dx * amt, y + dy * amt}) end)
+    end)
+  end
+
+  defp find_perimeter_within_bounds(point, distance, max_coord) do
+    find_perimeter(point, distance)
+    |> Enum.filter(fn {x, y} -> x >= 0 and x <= max_coord and y >= 0 and y <= max_coord end)
+    |> MapSet.new()
+  end
+
+  defp get_tuning_frequency({x, y}) do
+    x * 4_000_000 + y
+  end
+
+  defp find_possible_locations_of_distress_beacon(sensors_with_distances, max_coord) do
+    sensors_with_distances
+    |> Enum.reduce(MapSet.new(), fn {sensor, distance}, set ->
+      MapSet.union(set, find_perimeter_within_bounds(sensor, distance + 1, max_coord))
+    end)
+  end
+
+  defp find_location_of_distress_beacon(sensors_with_distances, possible_locations) do
+    possible_locations
+    |> Enum.find(fn point ->
+      !(sensors_with_distances
+        |> Enum.any?(fn {sensor, distance} ->
+          AoC.Common.manhattan_distance(sensor, point) <= distance
+        end))
     end)
   end
 end
