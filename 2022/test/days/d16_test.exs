@@ -4,11 +4,11 @@ defmodule AoC.Days.D16Test do
 
   describe "day 16" do
     test "part 1" do
-      IO.puts("REMINDER: Day 16 is not yet complete")
-      # input = Path.expand("./test/days/examples/d16.txt") |> File.read!()
-      # result = AoC.Days.D16.part_one(input)
+      # IO.puts("REMINDER: Day 16 is not yet complete")
+      input = Path.expand("./test/days/examples/d16.txt") |> File.read!()
+      result = AoC.Days.D16.part_one(input)
 
-      # assert result == {:ok, 1651}
+      assert result == {:ok, 1651}
     end
 
     # test "part 2" do
