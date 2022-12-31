@@ -2,13 +2,13 @@ defmodule AoC.Days.D16 do
   @line_pattern ~r/Valve (.+) has flow rate=(\d+); tunnels? leads? to valves? (.+)/
 
   def part_one(content) do
-    result = parse(content) |> maximum_pressure_release_in_seconds(30)
+    result = parse(content) |> maximum_pressure_release_alone()
 
     {:ok, result}
   end
 
-  def part_two(_content) do
-    result = -1
+  def part_two(content) do
+    result = parse(content) |> maximum_pressure_release_in_seconds_with_elephant()
 
     {:ok, result}
   end
@@ -35,10 +35,57 @@ defmodule AoC.Days.D16 do
     end
   end
 
-  defp maximum_pressure_release_in_seconds(valves, seconds, start_valve \\ "AA") do
+  defp maximum_pressure_release_alone(valves) do
+    seconds = 30
+    start_valve = "AA"
     {_, costs} = get_positive_valves_and_costs(valves, start_valve)
 
-    find_maximum_pressure(valves, costs, start_valve, seconds, seconds, [start_valve], 0)
+    {max_pressure, _} =
+      find_maximum_pressure(
+        valves,
+        costs,
+        start_valve,
+        seconds,
+        seconds,
+        [],
+        0,
+        %{}
+      )
+
+    max_pressure
+  end
+
+  defp maximum_pressure_release_in_seconds_with_elephant(valves) do
+    seconds = 26
+    start_valve = "AA"
+    {_, costs} = get_positive_valves_and_costs(valves, start_valve)
+
+    {_, possible_paths} =
+      find_maximum_pressure(
+        valves,
+        costs,
+        start_valve,
+        seconds,
+        seconds,
+        [],
+        0,
+        %{}
+      )
+
+    result =
+      possible_paths
+      |> Enum.reduce(0, fn {a, av}, max ->
+        possible_paths
+        |> Enum.reduce(max, fn {b, bv}, max ->
+
+          cond do
+            MapSet.disjoint?(a, b) and av + bv > max -> av + bv
+            true -> max
+          end
+        end)
+      end)
+
+    result
   end
 
   defp get_positive_valves_and_costs(valves, start_valve) do
@@ -99,22 +146,33 @@ defmodule AoC.Days.D16 do
          maximum_seconds,
          seconds_remaining,
          current_path,
-         current_max
+         current_max,
+         possible_paths
        ) do
-    current_valve = List.last(current_path)
+    current_valve = if length(current_path) == 0, do: start_valve, else: List.last(current_path)
+    current_path_nodes = MapSet.new(current_path)
+
+    released =
+      calculate_pressure_released_from_path(
+        valves,
+        costs,
+        current_path,
+        maximum_seconds,
+        start_valve
+      )
+
+    possible_paths =
+      Map.put(
+        possible_paths,
+        current_path_nodes,
+        max(Map.get(possible_paths, current_path_nodes, 0), released)
+      )
+
+    current_max = max(released, current_max)
 
     cond do
       seconds_remaining <= 0 ->
-        released =
-          calculate_pressure_released_from_path(
-            valves,
-            costs,
-            current_path,
-            maximum_seconds,
-            start_valve
-          )
-
-        max(current_max, released)
+        {current_max, possible_paths}
 
       true ->
         current_valve_costs = Map.get(costs, current_valve)
@@ -122,25 +180,19 @@ defmodule AoC.Days.D16 do
         candidates =
           current_valve_costs
           |> Map.keys()
-          |> Enum.filter(fn target_valve -> target_valve not in current_path end)
+          |> Enum.filter(fn target_valve ->
+            target_valve not in current_path
+          end)
 
         case length(candidates) do
           0 ->
-            released =
-              calculate_pressure_released_from_path(
-                valves,
-                costs,
-                current_path,
-                maximum_seconds,
-                start_valve
-              )
-
-            max(current_max, released)
+            {current_max, possible_paths}
 
           _ ->
             candidates
-            |> Enum.reduce(current_max, fn candidate_valve, current_max ->
-              released =
+            |> Enum.reduce({current_max, possible_paths}, fn candidate_valve,
+                                                             {current_max, possible_paths} ->
+              {released, possible_paths} =
                 find_maximum_pressure(
                   valves,
                   costs,
@@ -148,10 +200,11 @@ defmodule AoC.Days.D16 do
                   maximum_seconds,
                   seconds_remaining - Map.get(current_valve_costs, candidate_valve),
                   current_path ++ [candidate_valve],
-                  current_max
+                  current_max,
+                  possible_paths
                 )
 
-              max(current_max, released)
+              {max(released, current_max), possible_paths}
             end)
         end
     end
