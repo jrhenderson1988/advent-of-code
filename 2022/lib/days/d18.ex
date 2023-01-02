@@ -1,25 +1,6 @@
 defmodule AoC.Days.D18 do
   def part_one(content) do
-    coords = parse(content)
-
-    result =
-      coords
-      |> Enum.reduce(0, fn coord, total_faces ->
-        faces = MapSet.new(cube_faces(coord, 1))
-
-        total_faces +
-          (coords
-           |> Enum.reduce(faces, fn other, faces ->
-             case other == coord do
-               true ->
-                 faces
-
-               false ->
-                 MapSet.difference(faces, MapSet.new(cube_faces(other, 1)))
-             end
-           end)
-           |> MapSet.size())
-      end)
+    result = parse(content) |> calculate_outer_surface_area(1)
 
     {:ok, result}
   end
@@ -45,6 +26,33 @@ defmodule AoC.Days.D18 do
         end)
 
       {x, y, z}
+    end)
+  end
+
+  defp build_face_map(coords, cube_size) do
+    coords
+    |> Enum.reduce(%{}, fn coord, face_map ->
+      Map.put(face_map, coord, MapSet.new(cube_faces(coord, cube_size)))
+    end)
+  end
+
+  defp calculate_outer_surface_area(coords, cube_size) do
+    coords = build_face_map(coords, cube_size)
+
+    coords
+    |> Enum.reduce(0, fn {coord, faces}, total_faces ->
+      total_faces +
+        (coords
+         |> Enum.reduce(faces, fn {other, other_faces}, faces ->
+           case other == coord do
+             true ->
+               faces
+
+             false ->
+               MapSet.difference(faces, other_faces)
+           end
+         end)
+         |> MapSet.size())
     end)
   end
 
