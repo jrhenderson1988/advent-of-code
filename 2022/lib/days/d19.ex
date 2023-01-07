@@ -1,5 +1,6 @@
 defmodule AoC.Days.D19 do
-  @max_mins 22
+  @max_mins 24
+  @debug false
 
   def part_one(content) do
     result = parse(content) |> determine_quality_level_sum()
@@ -68,7 +69,7 @@ defmodule AoC.Days.D19 do
     # TODO - remove take to try all blueprints
     |> Enum.take(1)
     |> Enum.map(fn {id, blueprint} ->
-      IO.puts("==== QUALITY FOR BLUEPRINT #{id} ====")
+      print("==== QUALITY FOR BLUEPRINT #{id} ====")
       determine_quality_level(id, blueprint)
     end)
     |> Enum.sum()
@@ -76,31 +77,73 @@ defmodule AoC.Days.D19 do
 
   defp determine_quality_level(id, blueprint) do
     current_state = {{1, 0, 0, 0}, {0, 0, 0, 0}}
-    total = total_geodes_possible(blueprint, current_state, @max_mins, 0)
+    max_spend_per_round = get_maximum_spend_per_round(blueprint)
+
+    {total, _} =
+      total_geodes_possible(blueprint, max_spend_per_round, current_state, @max_mins, 0, %{})
+
+    IO.puts("total: #{inspect(total)}")
+
     total * id
   end
 
-  defp total_geodes_possible(blueprint, state, minutes_remaining, max_geodes) do
-    # indent = 0..(@max_mins - minutes_remaining) |> Enum.map(fn _ -> "  " end) |> Enum.join()
-    # IO.puts("#{indent}Minutes remaining: #{minutes_remaining}, state: #{inspect(state)}")
-
+  defp total_geodes_possible(
+         blueprint,
+         max_spend,
+         state,
+         minutes_remaining,
+         max_geodes,
+         cache
+       ) do
     cond do
-      minutes_remaining < 0 ->
+      minutes_remaining < 1 ->
         :error
 
-      minutes_remaining == 0 ->
-        total_geodes = get_material_quantity(state, :geode)
-        max(total_geodes, max_geodes)
+      minutes_remaining == 1 ->
+        new_state = gather_materials(state)
+        total_geodes = get_material_quantity(new_state, :geode)
+        result = max(total_geodes, max_geodes)
+        print("Minute *: #{inspect(new_state)} / total geodes: #{total_geodes} / result: #{result}")
 
-      minutes_remaining > 0 ->
-        neighbours = get_neighbouring_states(blueprint, state)
+        key = {new_state, minutes_remaining}
+        cache = Map.put(cache, key, result)
+        {result, cache}
+
+      minutes_remaining > 1 ->
+        new_state = gather_materials(state)
+        print("Minute #{@max_mins - minutes_remaining + 1}: / Initial: #{inspect(state)} / Current: #{inspect(new_state)}")
+        neighbours =
+          get_neighbouring_states(blueprint, state, new_state)
+          |> Enum.reject(fn neighbour -> too_many_robots(neighbour, max_spend) end)
+          # |> Enum.map(fn neighbour -> discard_excess_materials(neighbour, max_spend) end)
 
         neighbours
-        |> Enum.reduce(max_geodes, fn neighbour, current_max ->
-          max(
-            current_max,
-            total_geodes_possible(blueprint, neighbour, minutes_remaining - 1, current_max)
-          )
+        |> Enum.reduce({max_geodes, cache}, fn neighbour, {current_max, cache} ->
+          new_minutes_remaining = minutes_remaining - 1
+
+          key = {neighbour, new_minutes_remaining}
+
+          cond do
+            Map.has_key?(cache, key) ->
+              {Map.get(cache, key), cache}
+
+            true ->
+              {result, cache} =
+                total_geodes_possible(
+                  blueprint,
+                  max_spend,
+                  neighbour,
+                  new_minutes_remaining,
+                  current_max,
+                  cache
+                )
+
+              new_max = max(current_max, result)
+              cache = Map.put(cache, key, new_max)
+              {new_max, cache}
+          end
+
+
         end)
     end
   end
@@ -127,18 +170,13 @@ defmodule AoC.Days.D19 do
     end
   end
 
-  defp get_neighbouring_states(blueprint, state) do
-    # all possible combinations of possible robot purchases
-    # no robots purchased
+  defp get_neighbouring_states(blueprint, current_state, next_state) do
     [:geode, :obsidian, :clay, :ore, :none]
-    |> Enum.filter(fn robot -> can_afford_robot(blueprint, state, robot) end)
+    |> Enum.filter(fn robot -> can_afford_robot(blueprint, current_state, robot) end)
     |> Enum.map(fn robot ->
       cost = get_robot_cost(blueprint, robot)
-      state = charge_cost(state, cost)
-      state = gather_materials(state)
-      state = add_robot(state, robot)
 
-      state
+      next_state |> charge_cost(cost) |> add_robot(robot)
     end)
   end
 
@@ -156,18 +194,6 @@ defmodule AoC.Days.D19 do
       robot -> Map.get(blueprint, robot)
     end
   end
-
-  # defp buy_robot(blueprint, state, robot) do
-  #   case robot do
-  #     :none ->
-  #       state
-
-  #     robot ->
-  #       state
-  #       |> add_robot(robot)
-  #       |> charge_cost(get_robot_cost(blueprint, robot))
-  #   end
-  # end
 
   defp charge_cost(state, cost) do
     {robots, materials} = state
@@ -212,5 +238,59 @@ defmodule AoC.Days.D19 do
     {m_ore, m_clay, m_obsidian, m_geode} = materials
 
     {robots, {m_ore + r_ore, m_clay + r_clay, m_obsidian + r_obsidian, m_geode + r_geode}}
+  end
+
+  defp get_maximum_spend_per_round(blueprint) do
+    [:ore, :clay, :obsidian]
+    |> Enum.reduce(%{}, fn material, max_materials ->
+      Map.put(
+        max_materials,
+        material,
+        Enum.map(blueprint, fn {_, cost} -> Map.get(cost, material, 0) end) |> Enum.max()
+      )
+    end)
+  end
+
+  def too_many_robots(state, max_spend) do
+    max_spend
+    |> Enum.any?(fn {material, max_required} ->
+      get_robot_total(state, material) > max_required
+    end)
+  end
+
+  def too_many_materials(state, max_spend) do
+    max_spend
+    |> Enum.any?(fn {material, max_required} ->
+      get_material_quantity(state, material) > max_required
+    end)
+  end
+
+  def discard_excess_materials(state, max_spend) do
+    [new_ore, new_clay, new_obsidian] =
+      [:ore, :clay, :obsidian]
+      |> Enum.map(fn material ->
+        current = get_material_quantity(state, material)
+
+        min(current, Map.get(max_spend, material, current))
+      end)
+
+    {robots, _} = state
+
+    {robots, {new_ore, new_clay, new_obsidian, get_material_quantity(state, :geode)}}
+  end
+
+  # def optimistic_best_score(state, minutes_remaining) do
+  #   current_geode_robots = get_robot_total(state, :geode)
+  #   current_geodes = get_material_quantity(state, :geode)
+
+  #   current_geodes +
+  #     (0..minutes_remaining
+  #      |> Enum.reduce(current_geode_robots, fn n, geode_robots -> geode_robots + n end))
+  # end
+
+  defp print(input) do
+    if @debug do
+      IO.puts(input)
+    end
   end
 end

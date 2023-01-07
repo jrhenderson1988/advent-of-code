@@ -8,6 +8,12 @@
             "type": "shell",
             "command": "mix test",
             "group": "test"
+        },
+        {
+            "label": "test (trace)",
+            "type": "shell",
+            "command": "mix test --trace",
+            "group": "test"
         }
     ]
 }
