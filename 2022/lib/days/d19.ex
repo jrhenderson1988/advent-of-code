@@ -1,6 +1,5 @@
 defmodule AoC.Days.D19 do
   @max_mins 24
-  @debug false
 
   def part_one(content) do
     result = parse(content) |> determine_quality_level_sum()
@@ -66,23 +65,19 @@ defmodule AoC.Days.D19 do
 
   defp determine_quality_level_sum(blueprints) do
     blueprints
-    # TODO - remove take to try all blueprints
-    |> Enum.take(1)
     |> Enum.map(fn {id, blueprint} ->
-      print("==== QUALITY FOR BLUEPRINT #{id} ====")
       determine_quality_level(id, blueprint)
     end)
     |> Enum.sum()
   end
 
   defp determine_quality_level(id, blueprint) do
-    current_state = {{1, 0, 0, 0}, {0, 0, 0, 0}}
     max_spend_per_round = get_maximum_spend_per_round(blueprint)
+
+    current_state = {{1, 0, 0, 0}, {0, 0, 0, 0}}
 
     {total, _} =
       total_geodes_possible(blueprint, max_spend_per_round, current_state, @max_mins, 0, %{})
-
-    IO.puts("total: #{inspect(total)}")
 
     total * id
   end
@@ -103,7 +98,6 @@ defmodule AoC.Days.D19 do
         new_state = gather_materials(state)
         total_geodes = get_material_quantity(new_state, :geode)
         result = max(total_geodes, max_geodes)
-        print("Minute *: #{inspect(new_state)} / total geodes: #{total_geodes} / result: #{result}")
 
         key = {new_state, minutes_remaining}
         cache = Map.put(cache, key, result)
@@ -111,11 +105,11 @@ defmodule AoC.Days.D19 do
 
       minutes_remaining > 1 ->
         new_state = gather_materials(state)
-        print("Minute #{@max_mins - minutes_remaining + 1}: / Initial: #{inspect(state)} / Current: #{inspect(new_state)}")
+
         neighbours =
           get_neighbouring_states(blueprint, state, new_state)
           |> Enum.reject(fn neighbour -> too_many_robots(neighbour, max_spend) end)
-          # |> Enum.map(fn neighbour -> discard_excess_materials(neighbour, max_spend) end)
+          |> Enum.map(fn neighbour -> discard_excess_materials(neighbour, max_spend, minutes_remaining) end)
 
         neighbours
         |> Enum.reduce({max_geodes, cache}, fn neighbour, {current_max, cache} ->
@@ -142,8 +136,6 @@ defmodule AoC.Days.D19 do
               cache = Map.put(cache, key, new_max)
               {new_max, cache}
           end
-
-
         end)
     end
   end
@@ -265,13 +257,15 @@ defmodule AoC.Days.D19 do
     end)
   end
 
-  def discard_excess_materials(state, max_spend) do
+  def discard_excess_materials(state, max_spend, minutes_remaining) do
     [new_ore, new_clay, new_obsidian] =
       [:ore, :clay, :obsidian]
       |> Enum.map(fn material ->
         current = get_material_quantity(state, material)
+        max_spend_per_round = Map.get(max_spend, material, current)
+        max_spend_for_rest_of_simulation = max_spend_per_round * minutes_remaining
 
-        min(current, Map.get(max_spend, material, current))
+        min(current, max_spend_for_rest_of_simulation)
       end)
 
     {robots, _} = state
@@ -279,18 +273,4 @@ defmodule AoC.Days.D19 do
     {robots, {new_ore, new_clay, new_obsidian, get_material_quantity(state, :geode)}}
   end
 
-  # def optimistic_best_score(state, minutes_remaining) do
-  #   current_geode_robots = get_robot_total(state, :geode)
-  #   current_geodes = get_material_quantity(state, :geode)
-
-  #   current_geodes +
-  #     (0..minutes_remaining
-  #      |> Enum.reduce(current_geode_robots, fn n, geode_robots -> geode_robots + n end))
-  # end
-
-  defp print(input) do
-    if @debug do
-      IO.puts(input)
-    end
-  end
 end
