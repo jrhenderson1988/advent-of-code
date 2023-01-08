@@ -109,7 +109,12 @@ defmodule AoC.Days.D19 do
         neighbours =
           get_neighbouring_states(blueprint, state, new_state)
           |> Enum.reject(fn neighbour -> too_many_robots(neighbour, max_spend) end)
-          |> Enum.map(fn neighbour -> discard_excess_materials(neighbour, max_spend, minutes_remaining) end)
+          |> Enum.reject(fn neighbour ->
+            cannot_beat_current_best(neighbour, minutes_remaining, max_geodes)
+          end)
+          |> Enum.map(fn neighbour ->
+            discard_excess_materials(neighbour, max_spend, minutes_remaining)
+          end)
 
         neighbours
         |> Enum.reduce({max_geodes, cache}, fn neighbour, {current_max, cache} ->
@@ -273,4 +278,18 @@ defmodule AoC.Days.D19 do
     {robots, {new_ore, new_clay, new_obsidian, get_material_quantity(state, :geode)}}
   end
 
+  defp cannot_beat_current_best(state, minutes_remaining, current_best) do
+    optimistic_best_score(state, minutes_remaining) < current_best
+  end
+
+  defp optimistic_best_score(state, minutes_remaining) do
+    current_geode_robots = get_robot_total(state, :geode)
+    current_geodes = get_material_quantity(state, :geode)
+
+    current_geodes +
+      (0..(minutes_remaining - 1)
+       |> Enum.reduce(current_geode_robots, fn n, geode_robots ->
+         geode_robots + n
+       end))
+  end
 end
