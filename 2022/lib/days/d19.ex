@@ -1,14 +1,12 @@
 defmodule AoC.Days.D19 do
-  @max_mins 24
-
   def part_one(content) do
     result = parse(content) |> determine_quality_level_sum()
 
     {:ok, result}
   end
 
-  def part_two(_content) do
-    result = -1
+  def part_two(content) do
+    result = parse(content) |> product_of_maximum_opened_geodes()
 
     {:ok, result}
   end
@@ -63,233 +61,176 @@ defmodule AoC.Days.D19 do
     end
   end
 
+  defp product_of_maximum_opened_geodes(blueprints) do
+    blueprints
+    |> Enum.take(3)
+    |> Enum.map(fn {_, bp} -> adapt_blueprint(bp) end)
+    |> Enum.map(fn bp ->
+      r = search(bp, {{1, 0, 0, 0}, {0, 0, 0, 0}, 32}, 0)
+      IO.puts("Done: #{r}")
+      r
+    end)
+    |> Enum.product()
+  end
+
   defp determine_quality_level_sum(blueprints) do
     blueprints
-    |> Enum.map(fn {id, blueprint} ->
-      determine_quality_level(id, blueprint)
-    end)
+    |> Enum.map(fn {id, bp} -> {id, adapt_blueprint(bp)} end)
+    |> Enum.map(fn {id, bp} -> determine_quality_level(id, bp) end)
     |> Enum.sum()
   end
 
   defp determine_quality_level(id, blueprint) do
-    max_spend_per_round = get_maximum_spend_per_round(blueprint)
-
-    current_state = {{1, 0, 0, 0}, {0, 0, 0, 0}}
-
-    {total, _} =
-      total_geodes_possible(blueprint, max_spend_per_round, current_state, @max_mins, 0, %{})
-
+    total = search(blueprint, {{1, 0, 0, 0}, {0, 0, 0, 0}, 24}, 0)
     total * id
   end
 
-  defp total_geodes_possible(
-         blueprint,
-         max_spend,
-         state,
-         minutes_remaining,
-         max_geodes,
-         cache
-       ) do
+  defp adapt_blueprint(blueprint) do
+    ore_cost = Map.get(blueprint, :ore)
+    clay_cost = Map.get(blueprint, :clay)
+    obsidian_cost = Map.get(blueprint, :obsidian)
+    geode_cost = Map.get(blueprint, :geode)
+
+    {
+      Map.get(ore_cost, :ore),
+      Map.get(clay_cost, :ore),
+      Map.get(obsidian_cost, :ore),
+      Map.get(obsidian_cost, :clay),
+      Map.get(geode_cost, :ore),
+      Map.get(geode_cost, :obsidian)
+    }
+  end
+
+  defp search(bp, state, best_overall) do
+    {robots, materials, time_remaining} = state
+    {r_ore, r_clay, r_obsidian, r_geode} = robots
+    {m_ore, m_clay, m_obsidian, m_geode} = materials
+
     cond do
-      minutes_remaining < 1 ->
-        :error
+      time_remaining == 0 ->
+        0
 
-      minutes_remaining == 1 ->
-        new_state = gather_materials(state)
-        total_geodes = get_material_quantity(new_state, :geode)
-        result = max(total_geodes, max_geodes)
+      best_overall >= m_geode + optimistic_best(r_geode, time_remaining) ->
+        0
 
-        key = {new_state, minutes_remaining}
-        cache = Map.put(cache, key, result)
-        {result, cache}
+      r_ore >= cost_of(bp, :geode, :ore) and r_obsidian >= cost_of(bp, :geode, :obsidian) ->
+        optimistic_best(r_geode, time_remaining)
 
-      minutes_remaining > 1 ->
-        new_state = gather_materials(state)
+      true ->
+        ore_limit_hit = r_ore >= max_spend(bp, :ore)
+        clay_limit_hit = r_clay >= max_spend(bp, :clay)
+        obsidian_limit_hit = r_obsidian >= max_spend(bp, :obsidian)
 
-        neighbours =
-          get_neighbouring_states(blueprint, state, new_state)
-          |> Enum.reject(fn neighbour -> too_many_robots(neighbour, max_spend) end)
-          |> Enum.reject(fn neighbour ->
-            cannot_beat_current_best(neighbour, minutes_remaining, max_geodes)
-          end)
-          |> Enum.map(fn neighbour ->
-            discard_excess_materials(neighbour, max_spend, minutes_remaining)
-          end)
-
-        neighbours
-        |> Enum.reduce({max_geodes, cache}, fn neighbour, {current_max, cache} ->
-          new_minutes_remaining = minutes_remaining - 1
-
-          key = {neighbour, new_minutes_remaining}
-
+        %{
+          :geode =>
+            m_ore >= cost_of(bp, :geode, :ore) and m_obsidian >= cost_of(bp, :geode, :obsidian),
+          :obsidian =>
+            m_ore >= cost_of(bp, :obsidian, :ore) and m_clay >= cost_of(bp, :obsidian, :clay) and
+              !obsidian_limit_hit,
+          :clay => m_ore >= cost_of(bp, :clay, :ore) and !clay_limit_hit,
+          :ore => m_ore >= cost_of(bp, :ore, :ore) and !ore_limit_hit,
+          :none => !ore_limit_hit
+        }
+        |> Enum.reduce(0, fn {choice, condition}, best ->
           cond do
-            Map.has_key?(cache, key) ->
-              {Map.get(cache, key), cache}
+            condition ->
+              new_state = choose_robot(bp, state, choice)
+              max(best, r_geode + search(bp, new_state, max(best, best_overall)))
 
             true ->
-              {result, cache} =
-                total_geodes_possible(
-                  blueprint,
-                  max_spend,
-                  neighbour,
-                  new_minutes_remaining,
-                  current_max,
-                  cache
-                )
-
-              new_max = max(current_max, result)
-              cache = Map.put(cache, key, new_max)
-              {new_max, cache}
+              best
           end
         end)
     end
   end
 
-  defp get_robot_total(state, robot) do
-    {{ore, clay, obsidian, geode}, _} = state
+  defp max_spend(bp, type) do
+    case type do
+      :ore ->
+        max(
+          cost_of(bp, :geode, :ore),
+          max(cost_of(bp, :clay, :ore), cost_of(bp, :obsidian, :ore))
+        )
 
-    case robot do
-      :ore -> ore
-      :clay -> clay
-      :obsidian -> obsidian
-      :geode -> geode
+      :clay ->
+        cost_of(bp, :obsidian, :clay)
+
+      :obsidian ->
+        cost_of(bp, :geode, :obsidian)
     end
   end
 
-  defp get_material_quantity(state, material) do
-    {_, {ore, clay, obsidian, geode}} = state
+  defp choose_robot(bp, state, robot) do
+    {robots, materials, time_remaining} = state
 
-    case material do
-      :ore -> ore
-      :clay -> clay
-      :obsidian -> obsidian
-      :geode -> geode
+    new_materials = gather_materials(bp, materials, robots, robot)
+    new_robots = add_robot(robots, robot)
+    {new_robots, new_materials, time_remaining - 1}
+  end
+
+  defp add_robot(robots, robot) do
+    {r_ore, r_clay, r_obs, r_geo} = robots
+
+    case robot do
+      :none -> {r_ore, r_clay, r_obs, r_geo}
+      :ore -> {r_ore + 1, r_clay, r_obs, r_geo}
+      :clay -> {r_ore, r_clay + 1, r_obs, r_geo}
+      :obsidian -> {r_ore, r_clay, r_obs + 1, r_geo}
+      :geode -> {r_ore, r_clay, r_obs, r_geo + 1}
     end
   end
 
-  defp get_neighbouring_states(blueprint, current_state, next_state) do
-    [:geode, :obsidian, :clay, :ore, :none]
-    |> Enum.filter(fn robot -> can_afford_robot(blueprint, current_state, robot) end)
-    |> Enum.map(fn robot ->
-      cost = get_robot_cost(blueprint, robot)
+  defp gather_materials(bp, materials, robots, chosen_robot) do
+    {r_ore, r_clay, r_obs, r_geo} = robots
+    {m_ore, m_clay, m_obs, m_geo} = materials
 
-      next_state |> charge_cost(cost) |> add_robot(robot)
-    end)
-  end
-
-  defp can_afford_robot(blueprint, state, robot) do
-    costs = get_robot_cost(blueprint, robot)
-
-    Enum.all?(costs, fn {material, required_quantity} ->
-      get_material_quantity(state, material) >= required_quantity
-    end)
-  end
-
-  defp get_robot_cost(blueprint, robot) do
-    case robot do
-      :none -> %{}
-      robot -> Map.get(blueprint, robot)
-    end
-  end
-
-  defp charge_cost(state, cost) do
-    {robots, materials} = state
-
-    materials =
-      cost
-      |> Enum.reduce(materials, fn {material, quantity}, {ore, clay, obsidian, geode} ->
-        case material do
-          :ore -> {ore - quantity, clay, obsidian, geode}
-          :clay -> {ore, clay - quantity, obsidian, geode}
-          :obsidian -> {ore, clay, obsidian - quantity, geode}
-          :geode -> {ore, clay, obsidian, geode - quantity}
-        end
-      end)
-
-    {robots, materials}
-  end
-
-  defp add_robot(state, robot) do
-    case robot do
+    case chosen_robot do
       :none ->
-        state
+        {r_ore + m_ore, m_clay + r_clay, m_obs + r_obs, m_geo + r_geo}
 
-      robot ->
-        {{ore, clay, obsidian, geode}, materials} = state
+      :ore ->
+        {r_ore + m_ore - cost_of(bp, :ore, :ore), m_clay + r_clay, m_obs + r_obs, m_geo + r_geo}
 
-        robots =
-          case robot do
-            :ore -> {ore + 1, clay, obsidian, geode}
-            :clay -> {ore, clay + 1, obsidian, geode}
-            :obsidian -> {ore, clay, obsidian + 1, geode}
-            :geode -> {ore, clay, obsidian, geode + 1}
-          end
+      :clay ->
+        {r_ore + m_ore - cost_of(bp, :clay, :ore), m_clay + r_clay, m_obs + r_obs, m_geo + r_geo}
 
-        {robots, materials}
+      :obsidian ->
+        {r_ore + m_ore - cost_of(bp, :obsidian, :ore),
+         m_clay + r_clay - cost_of(bp, :obsidian, :clay), m_obs + r_obs, m_geo + r_geo}
+
+      :geode ->
+        {r_ore + m_ore - cost_of(bp, :geode, :ore), m_clay + r_clay,
+         m_obs + r_obs - cost_of(bp, :geode, :obsidian), m_geo + r_geo}
     end
   end
 
-  defp gather_materials(state) do
-    {robots, materials} = state
-    {r_ore, r_clay, r_obsidian, r_geode} = robots
-    {m_ore, m_clay, m_obsidian, m_geode} = materials
-
-    {robots, {m_ore + r_ore, m_clay + r_clay, m_obsidian + r_obsidian, m_geode + r_geode}}
+  defp optimistic_best(geode_robots, time_remaining) do
+    sum_range(geode_robots, geode_robots + time_remaining - 1)
   end
 
-  defp get_maximum_spend_per_round(blueprint) do
-    [:ore, :clay, :obsidian]
-    |> Enum.reduce(%{}, fn material, max_materials ->
-      Map.put(
-        max_materials,
-        material,
-        Enum.map(blueprint, fn {_, cost} -> Map.get(cost, material, 0) end) |> Enum.max()
-      )
-    end)
+  def sum_range(first, last) do
+    sum_natural(last) - sum_natural(first - 1)
   end
 
-  def too_many_robots(state, max_spend) do
-    max_spend
-    |> Enum.any?(fn {material, max_required} ->
-      get_robot_total(state, material) > max_required
-    end)
+  defp sum_natural(n) do
+    n * (n + 1) / 2
   end
 
-  def too_many_materials(state, max_spend) do
-    max_spend
-    |> Enum.any?(fn {material, max_required} ->
-      get_material_quantity(state, material) > max_required
-    end)
+  def rs(geode_robots, minutes_remaining) do
+    0..minutes_remaining
+    |> Enum.reduce(geode_robots, fn mr, total -> total + (mr + geode_robots) end)
   end
 
-  def discard_excess_materials(state, max_spend, minutes_remaining) do
-    [new_ore, new_clay, new_obsidian] =
-      [:ore, :clay, :obsidian]
-      |> Enum.map(fn material ->
-        current = get_material_quantity(state, material)
-        max_spend_per_round = Map.get(max_spend, material, current)
-        max_spend_for_rest_of_simulation = max_spend_per_round * minutes_remaining
+  defp cost_of(blueprint, robot, material) do
+    {ore_ore, clay_ore, obsidian_ore, obsidian_clay, geode_ore, geode_obsidian} = blueprint
 
-        min(current, max_spend_for_rest_of_simulation)
-      end)
-
-    {robots, _} = state
-
-    {robots, {new_ore, new_clay, new_obsidian, get_material_quantity(state, :geode)}}
-  end
-
-  defp cannot_beat_current_best(state, minutes_remaining, current_best) do
-    optimistic_best_score(state, minutes_remaining) < current_best
-  end
-
-  defp optimistic_best_score(state, minutes_remaining) do
-    current_geode_robots = get_robot_total(state, :geode)
-    current_geodes = get_material_quantity(state, :geode)
-
-    current_geodes +
-      (0..(minutes_remaining - 1)
-       |> Enum.reduce(current_geode_robots, fn n, geode_robots ->
-         geode_robots + n
-       end))
+    case {robot, material} do
+      {:ore, :ore} -> ore_ore
+      {:clay, :ore} -> clay_ore
+      {:obsidian, :ore} -> obsidian_ore
+      {:obsidian, :clay} -> obsidian_clay
+      {:geode, :ore} -> geode_ore
+      {:geode, :obsidian} -> geode_obsidian
+    end
   end
 end
