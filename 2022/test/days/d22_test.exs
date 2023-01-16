@@ -14,7 +14,7 @@ defmodule AoC.Days.D22Test do
     #   input = Path.expand("./test/days/examples/d22.txt") |> File.read!()
     #   result = AoC.Days.D22.part_two(input)
 
-    #   assert result == {:ok, 301}
+    #   assert result == {:ok, 5031}
     # end
   end
 end

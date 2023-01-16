@@ -1,17 +1,17 @@
 defmodule AoC.Days.D22 do
   def part_one(content) do
-    result = parse(content) |> simulate() |> get_password()
+    result = parse(content) |> walk_flat_map() |> get_password()
 
     {:ok, result}
   end
 
-  def part_two(_content) do
-    result = -1
+  def part_two(content) do
+    result = parse(content) |> walk_cube() |> get_password()
 
     {:ok, result}
   end
 
-  defp simulate({{world, start}, instructions}) do
+  defp walk_flat_map({{world, start}, instructions}) do
     instructions
     |> Enum.reduce({start, :right}, fn instruction, {pos, facing} ->
       case instruction do
@@ -20,6 +20,46 @@ defmodule AoC.Days.D22 do
         distance -> {walk(pos, facing, distance, world), facing}
       end
     end)
+  end
+
+  defp walk_cube({{world, start}, instructions}) do
+    # may need to re-parse, but might be do-able from the map
+    # map out on a flat grid, the faces of each cube, e.g.
+    #
+    #         ...#      |     |     |     |     |
+    #         .#..      |     |     |     |     |
+    #         #...      |     |     | 2,0 |     |
+    #         ....      |     |     |     |     |
+    # ...#.......#      |     |     |     |     |
+    # ........#...      | 0,1 | 1,1 | 2,1 |     |
+    # ..#....#....      |     |     |     |     |
+    # ..........#.      |     |     |     |     |
+    #         ...#....  |     |     |     |     |
+    #         .....#..  |     |     | 2,2 | 2,3 |
+    #         .#......  |     |     |     |     |
+    #         ......#.  |     |     |     |     |
+    #
+    # then pick a random square, decide that it is the "top"
+    # face and try to fold the rest of the squares around it
+    # to form a cube. We can then determine the
+    #
+    tiles_per_face = floor(map_size(world) / 6)
+    size = floor(:math.sqrt(tiles_per_face))
+
+    cube_faces =
+      0..5
+      |> Enum.reduce(MapSet.new(), fn y, acc ->
+        0..5
+        |> Enum.reduce(acc, fn x, acc ->
+          case Map.has_key?(world, {x * size, y * size}) do
+            true -> MapSet.put(acc, {x, y})
+            false -> acc
+          end
+        end)
+      end)
+
+    IO.puts("#{inspect({tiles_per_face, size})} --- #{inspect(cube_faces)}")
+    {start, :right}
   end
 
   defp turn(current, direction) do
