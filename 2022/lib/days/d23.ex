@@ -11,14 +11,27 @@ defmodule AoC.Days.D23 do
     {:ok, result}
   end
 
-  def part_two(_content) do
-    result = -1
+  def part_two(content) do
+    result = parse(content) |> round_where_no_moves_occurred()
 
     {:ok, result}
   end
 
+  defp round_where_no_moves_occurred(elves, round \\ 0) do
+    {elves, moves} = simulate_round(round, elves)
+
+    case moves do
+      0 -> round + 1
+      _ -> round_where_no_moves_occurred(elves, round + 1)
+    end
+  end
+
   defp simulate(elves, rounds) do
-    0..(rounds - 1) |> Enum.reduce(elves, &simulate_round/2)
+    0..(rounds - 1)
+    |> Enum.reduce(elves, fn round, elves ->
+      {elves, _} = simulate_round(round, elves)
+      elves
+    end)
   end
 
   defp simulate_round(round, elves) do
@@ -59,16 +72,15 @@ defmodule AoC.Days.D23 do
 
   defp move_elves(elves, proposals) do
     targets = get_targets(elves, proposals)
-
     0..(length(elves) - 1)
-    |> Enum.map(fn i ->
+    |> Enum.reduce({[], 0}, fn i, {updated, moves} ->
       elf = Enum.at(elves, i)
       target = Enum.at(targets, i)
 
       cond do
-        target == nil -> elf
-        is_unique_target(targets, i) -> target
-        true -> elf
+        target == nil -> {updated ++ [elf], moves}
+        is_unique_target(targets, i) -> {updated ++ [target], moves + 1}
+        true -> {updated ++ [elf], moves}
       end
     end)
   end
