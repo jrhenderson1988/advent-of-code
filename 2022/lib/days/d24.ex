@@ -5,14 +5,32 @@ defmodule AoC.Days.D24 do
     {:ok, result}
   end
 
-  def part_two(_content) do
-    result = -1
+  def part_two(content) do
+    result = parse(content) |> time_taken_to_return_for_snacks()
 
     {:ok, result}
   end
 
   defp find_length_of_shortest_path({start, finish, bounds, blizzards}) do
     search(MapSet.new([start]), finish, bounds, blizzards, 0)
+  end
+
+  defp time_taken_to_return_for_snacks({start, finish, bounds, blizzards}) do
+    journey1 = search(MapSet.new([start]), finish, bounds, blizzards, 0)
+
+    blizzards =
+      0..(journey1 - 1)
+      |> Enum.reduce(blizzards, fn _, blizzards -> move_blizzards(bounds, blizzards) end)
+
+    journey2 = search(MapSet.new([finish]), start, bounds, blizzards, 0)
+
+    blizzards =
+      0..(journey2 - 1)
+      |> Enum.reduce(blizzards, fn _, blizzards -> move_blizzards(bounds, blizzards) end)
+
+    journey3 = search(MapSet.new([start]), finish, bounds, blizzards, 0)
+
+    journey1 + journey2 + journey3
   end
 
   defp search(queue, target, bounds, blizzards, step) do
