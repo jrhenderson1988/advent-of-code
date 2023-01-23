@@ -50,16 +50,16 @@ defmodule AoC.Days.D22 do
   }
 
   def part_one(content) do
-    result = parse(content) |> walk_flat_map() |> get_password()
+    result = parse(content) |> walk_plane() |> get_password()
 
     {:ok, result}
   end
 
   def part_two(content, test \\ false) do
     if !test do
-      IO.puts("Warning: Day 22 part 2 is tailored to work only on input of a certain shape.")
-      IO.puts("It is not a general solution and may not work in all cases.")
-      IO.puts("Update @input_mappings in d22.ex to describe shape and transitions between faces")
+      IO.puts("# Warning: Day 22 part 2 is tailored to work only on input of a certain shape.")
+      IO.puts("# It is not a general solution and may not work in all cases.")
+      IO.puts("# Edit @input_mappings in d22.ex to describe shape and transitions between faces")
     end
 
     result = parse(content) |> walk_cube(test) |> get_password()
@@ -67,48 +67,65 @@ defmodule AoC.Days.D22 do
     {:ok, result}
   end
 
-  defp walk_flat_map({{world, start}, instructions}) do
-    instructions
-    |> Enum.reduce({start, :right}, fn instruction, {pos, facing} ->
-      case instruction do
-        :right -> {pos, turn(facing, :right)}
-        :left -> {pos, turn(facing, :left)}
-        distance -> {walk(pos, facing, distance, world), facing}
-      end
+  defp walk_plane({{world, start}, instructions}) do
+    walk({world, start}, instructions, fn pos, facing, bounds ->
+      get_new_position_on_plane(pos, facing, bounds)
     end)
   end
 
   defp walk_cube({{world, start}, instructions}, test) do
     size = get_cube_size(world)
-    faces = get_cube_faces(world, size)
     mappings = if test, do: @test_mappings, else: @input_mappings
 
+    walk({world, start}, instructions, fn pos, facing, bounds ->
+      get_new_position_on_cube(pos, facing, bounds, size, mappings)
+    end)
+  end
+
+  defp walk({world, start}, instructions, walk_fn) do
     instructions
     |> Enum.reduce({start, :right}, fn instruction, {pos, facing} ->
       case instruction do
-        :right ->
-          {pos, turn(facing, :right)}
-
-        :left ->
-          {pos, turn(facing, :left)}
-
-        distance ->
-          walk_cube(pos, facing, distance, world, {size, faces, mappings})
+        :right -> turn(pos, facing, :right)
+        :left -> turn(pos, facing, :left)
+        distance -> walk(pos, facing, distance, world, walk_fn)
       end
     end)
   end
 
-  defp get_cube_faces(world, size) do
-    0..5
-    |> Enum.reduce(MapSet.new(), fn y, acc ->
-      0..5
-      |> Enum.reduce(acc, fn x, acc ->
-        case Map.has_key?(world, {x * size, y * size}) do
-          true -> MapSet.put(acc, {x, y})
-          false -> acc
-        end
-      end)
+  defp walk(pos, facing, distance, world, walk_fn) do
+    distance..1
+    |> Enum.reduce_while({pos, facing}, fn _, {pos, facing} ->
+      bounds = get_boundaries(pos, world)
+      {new_pos, new_facing} = walk_fn.(pos, facing, bounds)
+
+      case Map.get(world, new_pos) do
+        :wall -> {:halt, {pos, facing}}
+        :tile -> {:cont, {new_pos, new_facing}}
+        nil -> {:halt, :error}
+      end
     end)
+  end
+
+  defp get_new_position_on_plane({x, y}, facing, bounds) do
+    new_pos = move_in_direction({x, y}, facing)
+
+    if out_of_bounds(new_pos, facing, bounds) do
+      {wrap_around(new_pos, facing, bounds), facing}
+    else
+      {new_pos, facing}
+    end
+  end
+
+  defp wrap_around({new_x, new_y}, facing, bounds) do
+    {{min_x, max_x}, {min_y, max_y}} = bounds
+
+    case facing do
+      :right -> {min_x, new_y}
+      :left -> {max_x, new_y}
+      :down -> {new_x, min_y}
+      :up -> {new_x, max_y}
+    end
   end
 
   defp get_cube_size(world) do
@@ -120,47 +137,36 @@ defmodule AoC.Days.D22 do
     {div(x, cube_size), div(y, cube_size)}
   end
 
-  defp turn(current, direction) do
+  defp turn(pos, current, direction) do
     case direction do
       :right ->
         case current do
-          :right -> :down
-          :down -> :left
-          :left -> :up
-          :up -> :right
+          :right -> {pos, :down}
+          :down -> {pos, :left}
+          :left -> {pos, :up}
+          :up -> {pos, :right}
         end
 
       :left ->
         case current do
-          :right -> :up
-          :down -> :right
-          :left -> :down
-          :up -> :left
+          :right -> {pos, :up}
+          :down -> {pos, :right}
+          :left -> {pos, :down}
+          :up -> {pos, :left}
         end
     end
   end
 
-  defp walk_cube(pos, facing, distance, world, cube_specs) do
-    distance..1
-    |> Enum.reduce_while({pos, facing}, fn _, {pos, facing} ->
-      bounds = {get_row_boundaries(pos, world), get_column_boundaries(pos, world)}
-      {next_x, next_y} = move_in_direction(pos, facing)
+  defp get_new_position_on_cube(pos, facing, bounds, cube_size, cube_mappings) do
+    {next_x, next_y} = move_in_direction(pos, facing)
 
-      {{next_x, next_y}, new_facing} =
-        cond do
-          out_of_bounds({next_x, next_y}, facing, bounds) ->
-            teleport(pos, facing, cube_specs)
+    cond do
+      out_of_bounds({next_x, next_y}, facing, bounds) ->
+        teleport(pos, facing, cube_size, cube_mappings)
 
-          true ->
-            {{next_x, next_y}, facing}
-        end
-
-      cond do
-        Map.get(world, {next_x, next_y}) == :wall -> {:halt, {pos, facing}}
-        Map.get(world, {next_x, next_y}) == :tile -> {:cont, {{next_x, next_y}, new_facing}}
-        true -> {:halt, :error}
-      end
-    end)
+      true ->
+        {{next_x, next_y}, facing}
+    end
   end
 
   defp move_in_direction({x, y}, facing) do
@@ -183,7 +189,7 @@ defmodule AoC.Days.D22 do
     end
   end
 
-  defp teleport(pos, facing, {cube_size, _cube_faces, cube_mappings}) do
+  defp teleport(pos, facing, cube_size, cube_mappings) do
     current_cube_face = get_cube_face(pos, cube_size)
     mapping = Map.get(cube_mappings, current_cube_face)
     {new_facing, new_face} = Map.get(mapping, facing)
@@ -257,52 +263,8 @@ defmodule AoC.Days.D22 do
     end)
   end
 
-  defp walk(pos, facing, distance, world) do
-    case facing do
-      :right ->
-        {min_x, max_x} = get_row_boundaries(pos, world)
-
-        take_steps(world, pos, distance, fn {x, y} ->
-          {if(x == max_x, do: min_x, else: x + 1), y}
-        end)
-
-      :down ->
-        {min_y, max_y} = get_column_boundaries(pos, world)
-
-        take_steps(world, pos, distance, fn {x, y} ->
-          {x, if(y == max_y, do: min_y, else: y + 1)}
-        end)
-
-      :left ->
-        {min_x, max_x} = get_row_boundaries(pos, world)
-
-        take_steps(world, pos, distance, fn {x, y} ->
-          {if(x == min_x, do: max_x, else: x - 1), y}
-        end)
-
-      :up ->
-        {min_y, max_y} = get_column_boundaries(pos, world)
-
-        take_steps(world, pos, distance, fn {x, y} ->
-          {x, if(y == min_y, do: max_y, else: y - 1)}
-        end)
-
-      _ ->
-        :error
-    end
-  end
-
-  defp take_steps(world, pos, distance, next_pos_fn) do
-    1..distance
-    |> Enum.reduce_while(pos, fn _, {x, y} ->
-      new_pos = next_pos_fn.({x, y})
-
-      case Map.get(world, new_pos) do
-        :wall -> {:halt, {x, y}}
-        :tile -> {:cont, new_pos}
-        nil -> :error
-      end
-    end)
+  defp get_boundaries(pos, world) do
+    {get_row_boundaries(pos, world), get_column_boundaries(pos, world)}
   end
 
   defp get_row_boundaries({x, y}, world, step \\ 0) do
