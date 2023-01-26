@@ -1,9 +1,7 @@
-from loader import load_input
-from .common import Grid, Point, load_points
-import os
+from .common import Grid, load_points
 
 
-def run():
-    points = load_points(load_input(os.path.join(os.path.dirname(__file__), 'input.txt')))
+def run(content):
+    points = load_points(content.strip().splitlines())
 
     return Grid(points).get_largest_area()

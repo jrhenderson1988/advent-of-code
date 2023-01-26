@@ -1,12 +1,8 @@
-from loader import load_input
-import os
-
-
-def run():
+def run(content):
     seen = {0}
     frequency = 0
     while True:
-        for line in load_input(os.path.join(os.path.dirname(__file__), 'input.txt')):
+        for line in content.strip().splitlines():
             frequency += int(line)
             if frequency in seen:
                 return frequency

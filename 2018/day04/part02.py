@@ -31,9 +31,8 @@ class Guard:
         return (most_lazy_minute, total_shifts_slept)
 
 
-def run():
-    input = load_input(os.path.join(os.path.dirname(__file__), 'input.txt'))
-    shifts = GuardShift.build_shifts([Event.parse(event) for event in input])
+def run(content):
+    shifts = GuardShift.build_shifts([Event.parse(event) for event in content.strip().splitlines()])
 
     guards = {}
     for shift in shifts:

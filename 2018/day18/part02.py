@@ -1,10 +1,8 @@
-from loader import load_input
 from .common import Area
-import os
 
 
-def run():
-    data = load_input(os.path.join(os.path.dirname(__file__), 'input.txt'))
+def run(content):
+    data = content.strip().splitlines()
 
     area = Area.parse(data)
 

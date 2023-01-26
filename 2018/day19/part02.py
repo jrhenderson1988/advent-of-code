@@ -1,4 +1,4 @@
-def run():
+def run(_content):
     return 24619952
 
 

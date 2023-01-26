@@ -1,10 +1,8 @@
-from loader import load_input
-import os
 from .common import Sky, Star
 
 
-def run():
-    stars = [Star.parse(line) for line in load_input(os.path.join(os.path.dirname(__file__), 'input.txt'))]
+def run(content):
+    stars = [Star.parse(line) for line in content.strip().splitlines()]
 
     sky = Sky(stars)
 

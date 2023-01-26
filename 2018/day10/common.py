@@ -65,8 +65,6 @@ class Sky:
                     s += '.'
             s += '\n'
 
-        s += 'Iterations: %d' % self.iterations
-
         return s
 
     @staticmethod

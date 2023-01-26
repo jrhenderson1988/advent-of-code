@@ -1,13 +1,11 @@
-from .common import Game
-from loader import load_input_as_string
-import os
 from re import compile
 
+from .common import Game
 
-def run():
-    data = load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt'))
+
+def run(content):
     pattern = compile(r'^(?P<players>\d+) players; last marble is worth (?P<points>\d+) points$')
-    match = pattern.match(data)
+    match = pattern.match(content)
     players = int(match.group('players'))
     points = int(match.group('points'))
 

@@ -1,8 +1,6 @@
-from loader import load_input
 from .common import DependencyTree
-import os
 
 
-def run():
-    tree = DependencyTree.parse(load_input(os.path.join(os.path.dirname(__file__), 'input.txt')))
+def run(content):
+    tree = DependencyTree.parse(content.strip().splitlines())
     return tree.resolve_path()

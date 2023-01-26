@@ -1,12 +1,10 @@
-from loader import load_input
 from .Grid import Grid
 from .Claim import Claim
-import os
 
 
-def run():
+def run(content):
     grid = Grid(1000, 1000)
-    for claim in load_input(os.path.join(os.path.dirname(__file__), 'input.txt')):
+    for claim in content.strip().splitlines():
         grid.plot_claim(Claim.parse(claim))
 
     return grid.total_overlaps()

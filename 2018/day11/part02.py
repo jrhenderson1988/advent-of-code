@@ -1,11 +1,10 @@
 from .common import Grid
-from loader import load_input_as_string
-import os
 
 
-def run():
-    serial_number = int(load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt')))
+def run(content):
+    serial_number = int(content)
 
     grid = Grid(serial_number)
 
-    return '(%d, %d, %d) = %d' % grid.largest_power_square()
+    x, y, size, _ = grid.largest_power_square()
+    return '%d,%d,%d' % (x, y, size)

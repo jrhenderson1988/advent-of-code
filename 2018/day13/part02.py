@@ -1,9 +1,8 @@
-from loader import load_input_as_string
 from .common import Track
-import os
 
 
-def run():
-    track = Track.parse(load_input_as_string(os.path.join(os.path.dirname(__file__), 'input.txt'), trim=False))
+def run(content):
+    track = Track.parse(content)
 
-    return track.find_last_cart()
+    x, y = track.find_last_cart()
+    return '%d,%d' % (x, y)

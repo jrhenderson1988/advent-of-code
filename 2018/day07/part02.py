@@ -1,9 +1,7 @@
-from loader import load_input
 from .common import DependencyTree
-import os
 
 
-def run():
-    tree = DependencyTree.parse(load_input(os.path.join(os.path.dirname(__file__), 'input.txt')))
-    path, time = tree.resolve_for_workers(5, 60)
+def run(content, workers=5, offset=60):
+    tree = DependencyTree.parse(content.strip().splitlines())
+    path, time = tree.resolve_for_workers(workers, offset)
     return time

@@ -1,10 +1,6 @@
-from loader import load_input
-import os
-
-
-def run():
+def run(content):
     frequency = 0
-    for line in load_input(os.path.join(os.path.dirname(__file__), 'input.txt')):
+    for line in content.strip().splitlines(keepends=False):
         frequency += int(line)
 
     return frequency

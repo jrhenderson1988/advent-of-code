@@ -131,7 +131,7 @@ class Matcher:
 
 class Pattern:
     def __init__(self, pattern: str):
-        if len(pattern) is not 5:
+        if len(pattern) != 5:
             raise ValueError('Invalid pattern %s' % pattern)
 
         self.pattern = [p == '#' for p in pattern]
