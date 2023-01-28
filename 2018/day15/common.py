@@ -1,6 +1,6 @@
-from collections import deque
-import uuid
 import copy
+import uuid
+from collections import deque
 
 
 class Unit:
@@ -55,6 +55,7 @@ class Zone:
         self.initial_units = {str(uuid.uuid4()): u for u in units}
         self.units = self.copy_units(self.initial_units)
         self.rounds = 0
+        self.total_units = len(self.units)
 
     def __repr__(self):
         s = ''
@@ -93,7 +94,7 @@ class Zone:
     def get_enemies_of(self, unit: Unit):
         return {k: u for k, u in self.units.items() if unit.is_enemy(u)}
 
-    def find_next_move(self, unit: Unit):
+    def _find_next_move(self, unit: Unit):
         enemies = self.get_enemies_of(unit)
         targets = [p for e in enemies.values() for p in self.get_adjacent_points(e.point)]
         if unit.point in targets:
@@ -128,6 +129,55 @@ class Zone:
 
         return None
 
+    def find_next_move(self, unit: Unit):
+        enemies = self.get_enemies_of(unit)
+        target_squares = [p for e in enemies.values() for p in self.get_adjacent_points(e.point)]
+        if unit.point in target_squares:
+            return None
+
+        closest_target_distance = None
+        closest_target = None
+        for target_square in self.only_open(target_squares):
+            dist = self.shortest_distance_between(unit.point, target_square)
+            if dist is None:
+                continue
+            elif closest_target_distance is None or dist < closest_target_distance:
+                closest_target_distance = dist
+                closest_target = target_square
+            elif dist == closest_target_distance:
+                closest_target = self.first_in_reading_order(closest_target, target_square)
+
+        if closest_target is None:
+            return None
+
+        best_next_step = None
+        best_next_step_distance = None
+        for next_step in self.only_open(self.get_adjacent_points(unit.point)):
+            dist = self.shortest_distance_between(next_step, closest_target)
+            if dist is None:
+                continue
+            elif best_next_step_distance is None or dist < best_next_step_distance:
+                best_next_step_distance = dist
+                best_next_step = next_step
+            elif dist == best_next_step_distance:
+                best_next_step = self.first_in_reading_order(best_next_step, next_step)
+
+        return best_next_step
+
+    def shortest_distance_between(self, source, target):
+        q = deque([(source, 0)])
+        explored = {source}
+        while len(q) > 0:
+            (v, dist) = q.popleft()
+            if v == target:
+                return dist
+            for w in self.only_open(self.get_adjacent_points(v)):
+                if w not in explored:
+                    explored.add(w)
+                    q.append((w, dist + 1))
+
+        return None
+
     def select_target(self, unit: Unit):
         enemies = self.get_enemies_of(unit)
         nearby = {k: u for k, u in enemies.items() if u.point in self.get_adjacent_points(unit.point)}
@@ -140,6 +190,7 @@ class Zone:
                 continue
 
             if len(self.get_enemies_of(self.units[key])) == 0:
+                # print("round=%d, finished early" % self.rounds)
                 return False
 
             next_move = self.find_next_move(self.units[key])
@@ -152,14 +203,33 @@ class Zone:
                 if self.units[target_key].hp <= 0:
                     del self.units[target_key]
 
+        # print("round=%d, completed" % self.rounds)
         self.rounds += 1
         return True
 
     def get_total_elves(self):
         return len([u for u in self.units.values() if u.race == Unit.ELF])
 
+    def get_total_goblins(self):
+        return len([u for u in self.units.values() if u.race == Unit.GOBLIN])
+
     def get_outcome(self):
-        return sum(unit.hp for unit in self.units.values() if unit.hp > 0) * self.rounds
+        hit_points = sum(unit.hp for unit in self.units.values() if unit.hp > 0)
+        rounds = self.rounds
+        print('%d HP and %d rounds' % (hit_points, rounds))
+        return hit_points * rounds
+
+    @staticmethod
+    def first_in_reading_order(a, b):
+        if a[1] < b[1]:
+            return a
+        if b[1] < a[1]:
+            return b
+        if a[0] < b[0]:
+            return a
+        if b[0] < a[0]:
+            return b
+        return a
 
     def part1(self):
         while self.round():
