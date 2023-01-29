@@ -94,89 +94,53 @@ class Zone:
     def get_enemies_of(self, unit: Unit):
         return {k: u for k, u in self.units.items() if unit.is_enemy(u)}
 
-    def _find_next_move(self, unit: Unit):
-        enemies = self.get_enemies_of(unit)
-        targets = [p for e in enemies.values() for p in self.get_adjacent_points(e.point)]
-        if unit.point in targets:
-            return None
-
-        targets = self.only_open(targets)
-        frontier = deque([(neighbour, unit.point) for neighbour in self.get_adjacent_points(unit.point)])
-        visited = {unit.point: None}
-
-        open_positions = {p: True for p in self.zone if p not in [u.point for u in self.units.values()]}
-        while len(frontier) > 0:
-            point, prev = frontier.popleft()
-            if point not in visited:
-                if point not in open_positions:
-                    continue
-
-                if point in targets:
-                    route = [point]
-                    while prev is not None:
-                        if visited[prev] is not None:
-                            route.append(prev)
-                        prev = visited[prev]
-
-                    return route[-1] if len(route) > 0 else None
-
-                visited[point] = prev
-                frontier.extend([
-                    (neighbour, point)
-                    for neighbour in self.get_adjacent_points(point)
-                    if neighbour not in visited
-                ])
-
-        return None
-
     def find_next_move(self, unit: Unit):
         enemies = self.get_enemies_of(unit)
         target_squares = [p for e in enemies.values() for p in self.get_adjacent_points(e.point)]
         if unit.point in target_squares:
             return None
 
-        closest_target_distance = None
-        closest_target = None
-        for target_square in self.only_open(target_squares):
-            dist = self.shortest_distance_between(unit.point, target_square)
-            if dist is None:
-                continue
-            elif closest_target_distance is None or dist < closest_target_distance:
-                closest_target_distance = dist
-                closest_target = target_square
-            elif dist == closest_target_distance:
-                closest_target = self.first_in_reading_order(closest_target, target_square)
-
+        closest_target = self.find_closest_target(unit.point, target_squares)
         if closest_target is None:
             return None
 
-        best_next_step = None
-        best_next_step_distance = None
-        for next_step in self.only_open(self.get_adjacent_points(unit.point)):
-            dist = self.shortest_distance_between(next_step, closest_target)
-            if dist is None:
-                continue
-            elif best_next_step_distance is None or dist < best_next_step_distance:
-                best_next_step_distance = dist
-                best_next_step = next_step
-            elif dist == best_next_step_distance:
-                best_next_step = self.first_in_reading_order(best_next_step, next_step)
+        return self.find_best_next_step(self.only_open(self.get_adjacent_points(unit.point)), closest_target)
 
-        return best_next_step
+    def find_closest_target(self, source, targets):
+        distances = self.shortest_distances_between(source, targets)
+        return self.choose_closest(distances)
 
-    def shortest_distance_between(self, source, target):
+    def find_best_next_step(self, next_steps, target):
+        distances = self.shortest_distances_between(target, next_steps)
+        return self.choose_closest(distances)
+
+    def choose_closest(self, distances):
+        closest_target = None
+        shortest_distance = None
+        for p, dist in distances.items():
+            if shortest_distance is None or dist < shortest_distance:
+                closest_target = p
+                shortest_distance = dist
+            elif dist == shortest_distance:
+                closest_target = self.first_in_reading_order(closest_target, p)
+
+        return closest_target
+
+    def shortest_distances_between(self, source, targets):
         q = deque([(source, 0)])
         explored = {source}
-        while len(q) > 0:
+        targets = set(targets)
+        distances = {}
+        while len(q) > 0 and len(targets) > 0:
             (v, dist) = q.popleft()
-            if v == target:
-                return dist
+            if v in targets:
+                targets.remove(v)
+                distances[v] = dist
             for w in self.only_open(self.get_adjacent_points(v)):
                 if w not in explored:
                     explored.add(w)
                     q.append((w, dist + 1))
-
-        return None
+        return distances
 
     def select_target(self, unit: Unit):
         enemies = self.get_enemies_of(unit)
