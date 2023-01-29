@@ -154,7 +154,6 @@ class Zone:
                 continue
 
             if len(self.get_enemies_of(self.units[key])) == 0:
-                # print("round=%d, finished early" % self.rounds)
                 return False
 
             next_move = self.find_next_move(self.units[key])
@@ -167,7 +166,6 @@ class Zone:
                 if self.units[target_key].hp <= 0:
                     del self.units[target_key]
 
-        # print("round=%d, completed" % self.rounds)
         self.rounds += 1
         return True
 
@@ -180,7 +178,6 @@ class Zone:
     def get_outcome(self):
         hit_points = sum(unit.hp for unit in self.units.values() if unit.hp > 0)
         rounds = self.rounds
-        print('%d HP and %d rounds' % (hit_points, rounds))
         return hit_points * rounds
 
     @staticmethod
