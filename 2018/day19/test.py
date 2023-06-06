@@ -2,6 +2,7 @@ import textwrap
 import unittest
 
 import day19.part01
+import day19.part02
 
 
 class D19Tests(unittest.TestCase):
@@ -19,10 +20,10 @@ class D19Tests(unittest.TestCase):
     )
 
     def test_part1(self):
-        self.assertEqual(5, day19.part01.run(self.a))
+        self.assertEqual(6, day19.part01.run(self.a))
 
     def test_part2(self):
-        # No tests given in puzzle - reverse engineering exercise
+        # No test (reverse engineered solution)
         pass
 
 

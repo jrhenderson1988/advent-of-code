@@ -1,153 +1,18 @@
 def run(_content):
-    return 24619952
+    return 30481920
 
-
-# I could not get a working solution for part 2 so I manually worked out what was happening by monitoring
-# the output of each instruction and then by reverse engineering each instruction. I ended up translating
-# the instructions into a super-inefficient algorithm that worked out all of the factors of a large number
-# and then added them together to give the result. Below shows how I got from the instructions in my input
-# to my resulting algorithm in order to see what was happening and eventually find out what was required.
+# Reverse engineering solution...
+# Found out that there's effectively a constant that is worked out at the beginning, which land in register 3. In part
+# 1, this constant is 888. In part 2, the constant is 10551288.
 #
+# The solution ends up calculating the sum of all the factors of the target number.
 #
+# In the case of part 1 (target = 888), the factors are: 1, 2, 3, 4, 6, 8, 12, 24, 37, 74, 111, 148, 222, 296, 444, 888.
+# The sum of these factors is: 2280
 #
+# In part 2 (target = 10551288), the factors are: 1, 2, 3, 4, 6, 8, 11, 12, 17, 22, 24, 33, 34, 44, 51, 66, 68, 88, 102,
+# 132, 136, 187, 204, 264, 374, 408, 561, 748, 1122, 1496, 2244, 2351, 4488, 4702, 7053, 9404, 14106, 18808, 25861,
+# 28212, 39967, 51722, 56424, 77583, 79934, 103444, 119901, 155166, 159868, 206888, 239802, 310332, 319736, 439637,
+# 479604, 620664, 879274, 959208, 1318911, 1758548, 2637822, 3517096, 5275644, 10551288.
 #
-# 00: r2 = r2 + 16
-# 01: r1 = 1
-# 02: r5 = 1
-# 03: r4 = r1 * r5
-# 04: r4 = r4 == r3 ? 1 : 0
-# 05: r2 = r4 + r2
-# 06: r2 = r2 + 1
-# 07: r0 = r1 + r0
-# 08: r5 = r5 + 1
-# 09: r4 = r5 > b3 ? 1 : 0
-# 10: r2 = r2 + r4
-# 11: r2 = 2
-# 12: r1 = r1 + 1
-# 13: r4 = r1 > b3 ? 1 : 0
-# 14: r2 = r4 + r2
-# 15: r2 = 1
-# 16: r2 = r2 * r2
-# 17: r3 = r3 + 2
-# 18: r3 = r3 * r3
-# 19: r3 = r2 * r3
-# 20: r3 = r3 * 11
-# 21: r4 = r4 + 7
-# 22: r4 = r4 * r2
-# 23: r4 = r4 + 6
-# 24: r3 = r3 + r4
-# 25: r2 = r2 + r0
-# 26: r2 = 0
-# 27: r4 = r2
-# 28: r4 = r4 * r2
-# 29: r4 = r2 + r4
-# 30: r4 = r2 * r4
-# 31: r4 = r4 * 14
-# 32: r4 = r4 * r2
-# 33: r3 = r3 + r4
-# 34: r0 = 0
-# 35: r2 = 0
-#
-#
-#
-#
-# 00: r2 = GOTO 16
-# 01: r1 = 1
-# 02: r5 = 1
-# 03: r4 = r1 * r5
-# 04: r4 = r4 == r3 ? 1 : 0
-# 05: r2 = r4 + 5
-# 06: r2 = GOTO 7
-# 07: r0 = r1 + r0
-# 08: r5 = r5 + 1
-# 09: r4 = r5 > b3 ? 1 : 0
-# 10: r2 = 10 + r4
-# 11: r2 = GOTO 2
-# 12: r1 = r1 + 1
-# 13: r4 = r1 > b3 ? 1 : 0
-# 14: r2 = r4 + 14
-# 15: r2 = GOTO 1
-# 16: r2 = GOTO 256 (end)
-# 17: r3 = r3 + 2
-# 18: r3 = r3 * r3
-# 19: r3 = 19 * r3
-# 20: r3 = r3 * 11
-# 21: r4 = r4 + 7
-# 22: r4 = r4 * 22
-# 23: r4 = r4 + 6
-# 24: r3 = r3 + r4
-# 25: r2 = 25 + r0
-# 26: r2 = GOTO 0
-# 27: r4 = 27
-# 28: r4 = r4 * 28
-# 29: r4 = 29 + r4
-# 30: r4 = 30 * r4
-# 31: r4 = r4 * 14
-# 32: r4 = r4 * 32
-# 33: r3 = r3 + r4
-# 34: r0 = 0
-# 35: r2 = GOTO 0
-#
-#
-#
-#
-# r0 = result
-# r1 = operand A
-# r2 = instruction pointer
-# r3 = target
-# r4 = condition / product
-# r5 = operand B
-#
-#
-#
-#
-# r3 = 10551396
-# r0 = 0
-# r1 = 1
-# r5 = 1
-# while True:
-#     r4 = r1 * r5
-#
-#     if r4 == r3:
-#         r0 += r1
-#
-#     r5 += 1
-#
-#     if r5 > r3:
-#         r1 += 1
-#     else:
-#         continue
-#
-#     if r1 > r3:
-#         return r0
-#     else:
-#         r5 = 1
-#
-#
-#
-#
-# target = 10551396
-# result = 0
-# a = 1
-# b = 1
-# while True:
-#     product = a * b
-#
-#     if product == target:
-#         result += a
-#
-#     b += 1
-#
-#     if b > target:
-#         a += 1
-#     else:
-#         continue
-#
-#     if a > target:
-#         return result
-#     else:
-#         b = 1
-#
-# Factors of 10551396 are: 1, 2, 3, 4, 6, 12, 879283, 1758566, 2637849, 3517132, 5275698, 10551396
-# Total of factors & Answer to part 2: 24619952
-#
+# The sum of these factors is 30481920

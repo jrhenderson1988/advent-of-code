@@ -29,8 +29,8 @@ class Program:
 
     def __repr__(self):
         return '#ip=%d %s' % (self.ip_register, str(self.registers)) + \
-               '\n' + \
-               '\n'.join([str(i) for i in self.instructions])
+            '\n' + \
+            '\n'.join([str(i) for i in self.instructions])
 
     @staticmethod
     def parse(registers: list, lines: list):
@@ -66,10 +66,10 @@ class Program:
             # Write instruction pointer value to the bound register before instruction
             self.registers[self.ip_register] = self.ip
 
+            # pre_instruction = self.state_repr()
+
             # Execute the instruction if there is one, otherwise break out of the loop and end execution
-            pre_instruction = self.state_repr()
             self.execute_instruction(instruction)
-            post_instruction = self.state_repr()
 
             # Write the value of the bound register back to the instruction pointer
             self.ip = self.registers[self.ip_register]
@@ -77,11 +77,11 @@ class Program:
             # Increment the instruction pointer
             self.ip += 1
 
-            i += 1
-            if i > 1000:
-                break
+            # post_instruction = self.state_repr()
 
-            print('%s %s %s' % (pre_instruction, str(instruction), post_instruction))
+            i += 1
+
+            # print('%s %s %s' % (pre_instruction, str(instruction), post_instruction))
 
     def instruction_addr(self, i: Instruction):
         self.registers[i.c] = self.registers[i.a] + self.registers[i.b]
