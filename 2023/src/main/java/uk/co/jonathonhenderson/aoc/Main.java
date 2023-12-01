@@ -68,7 +68,7 @@ public class Main {
     var start = System.currentTimeMillis();
     var result = fn.apply(input).orElse("Skipped");
     var end = System.currentTimeMillis();
-    var duration = start - end;
+    var duration = end - start;
 
     System.out.printf(">>> %s (%dms): %s%n", label, duration, result);
   }
