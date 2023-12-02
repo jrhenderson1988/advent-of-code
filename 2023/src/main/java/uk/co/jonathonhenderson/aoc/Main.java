@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import uk.co.jonathonhenderson.aoc.days.Day;
@@ -40,8 +40,8 @@ public class Main {
   private static void executeDay(Days.Single day, Parts part) {
     try {
       var instance = createInstance(day);
-      var input = loadInput(day);
-      executeParts(instance, part, input);
+      System.out.printf("%n=== Day %d ===%n", day.day());
+      executeParts(instance, part);
     } catch (ClassNotFoundException ignored) {
     } catch (NoSuchMethodException
         | InvocationTargetException
@@ -52,25 +52,24 @@ public class Main {
     }
   }
 
-  private static void executeParts(Day day, Parts part, String input) {
+  private static void executeParts(Day day, Parts part) {
     switch (part) {
       case Both ignored -> {
-        executeParts(day, Parts.first(), input);
-        executeParts(day, Parts.second(), input);
+        executeParts(day, Parts.first());
+        executeParts(day, Parts.second());
       }
-      case First ignored -> executeAndPrint("Part 1", day::part1, input);
-      case Second ignored -> executeAndPrint("Part 2", day::part2, input);
+      case First ignored -> executeAndPrint("Part 1", day::part1);
+      case Second ignored -> executeAndPrint("Part 2", day::part2);
     }
   }
 
-  private static void executeAndPrint(
-      String label, Function<String, Optional<String>> fn, String input) {
+  private static void executeAndPrint(String label, Supplier<Optional<String>> fn) {
     var start = System.currentTimeMillis();
-    var result = fn.apply(input).orElse("Skipped");
+    var result = fn.get().orElse("Skipped");
     var end = System.currentTimeMillis();
     var duration = end - start;
 
-    System.out.printf(">>> %s (%dms): %s%n", label, duration, result);
+    System.out.printf("> %s (%dms): %s%n", label, duration, result);
   }
 
   private static String loadInput(Days.Single day) throws IOException {
@@ -113,11 +112,13 @@ public class Main {
           NoSuchMethodException,
           InvocationTargetException,
           InstantiationException,
-          IllegalAccessException {
+          IllegalAccessException,
+          IOException {
     var className = getClassName(day);
     var clazz = Class.forName(className);
-    var constructor = clazz.getConstructor();
-    var instance = constructor.newInstance();
+    var constructor = clazz.getConstructor(String.class);
+    var input = loadInput(day);
+    var instance = constructor.newInstance(input);
 
     return (Day) instance;
   }

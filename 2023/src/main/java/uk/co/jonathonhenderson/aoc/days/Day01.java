@@ -12,6 +12,12 @@ import java.util.stream.IntStream;
 
 public class Day01 extends Day {
 
+  private final String input;
+
+  public Day01(String input) {
+    this.input = input;
+  }
+
   private static final Map<String, Integer> DIGITS =
       ofEntries(
           entry("0", 0),
@@ -36,12 +42,12 @@ public class Day01 extends Day {
           entry("nine", 9));
 
   @Override
-  public Optional<String> part1(String input) {
+  public Optional<String> part1() {
     return Optional.of(String.valueOf(sumDigitsInLines(input, this::findNumberWithDigits)));
   }
 
   @Override
-  public Optional<String> part2(String input) {
+  public Optional<String> part2() {
     return Optional.of(String.valueOf(sumDigitsInLines(input, this::findNumberWithDigitsAndWords)));
   }
 

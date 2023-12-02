@@ -14,15 +14,13 @@ class Day02Test {
           Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
           Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green""";
 
-  private final Day02 day = new Day02();
-
   @Test
   void part1() {
-    assertEquals(Optional.of("8"), day.part1(INPUT));
+    assertEquals(Optional.of("8"), new Day02(INPUT).part1());
   }
 
   @Test
   void part2() {
-    assertEquals(Optional.of("2286"), day.part2(INPUT));
+    assertEquals(Optional.of("2286"), new Day02(INPUT).part2());
   }
 }

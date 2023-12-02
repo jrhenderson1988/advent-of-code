@@ -23,15 +23,13 @@ class Day01Test {
       zoneight234
       7pqrstsixteen""";
 
-  private final Day01 day01 = new Day01();
-
   @Test
   void part1() {
-    assertEquals(Optional.of("142"), day01.part1(INPUT));
+    assertEquals(Optional.of("142"), new Day01(INPUT).part1());
   }
 
   @Test
   void part2() {
-    assertEquals(Optional.of("281"), day01.part2(INPUT2));
+    assertEquals(Optional.of("281"), new Day01(INPUT2).part2());
   }
 }

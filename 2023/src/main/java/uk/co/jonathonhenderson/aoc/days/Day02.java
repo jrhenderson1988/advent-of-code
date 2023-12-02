@@ -5,9 +5,20 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public class Day02 extends Day {
+
+  private final List<Game> games;
+
+  public Day02(String input) {
+    this.games = parse(input);
+  }
+
+  private static List<Game> parse(String input) {
+    return input.trim().lines().map(Game::parse).toList();
+  }
+
   @Override
-  public Optional<String> part1(String input) {
-    return parse(input).stream()
+  public Optional<String> part1() {
+    return games.stream()
         .filter(Game::isPossible)
         .map(Game::id)
         .reduce(Integer::sum)
@@ -15,12 +26,8 @@ public class Day02 extends Day {
   }
 
   @Override
-  public Optional<String> part2(String input) {
-    return parse(input).stream().map(Game::power).reduce(Integer::sum).map(String::valueOf);
-  }
-
-  private List<Game> parse(String input) {
-    return input.trim().lines().map(Game::parse).toList();
+  public Optional<String> part2() {
+    return games.stream().map(Game::power).reduce(Integer::sum).map(String::valueOf);
   }
 
   record Game(int id, List<Handful> handfuls) {
