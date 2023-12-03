@@ -110,12 +110,16 @@ public class Day03 extends Day {
     }
 
     private boolean isDigit(Point p) {
-      return grid.get(p) != null && grid.get(p) instanceof Cell.Digit;
+      return !isEmpty(p) && grid.get(p) instanceof Cell.Digit;
     }
 
     private boolean isFirstDigit(Point p) {
       var left = Point.of(p.x() - 1, p.y());
-      return grid.get(left) == null || grid.get(left) instanceof Cell.Symbol;
+      return isEmpty(left) || grid.get(left) instanceof Cell.Symbol;
+    }
+
+    private boolean isEmpty(Point p) {
+      return !grid.containsKey(p);
     }
 
     private List<Point> getDigitPointsFrom(Point p) {
@@ -141,7 +145,7 @@ public class Day03 extends Day {
     }
 
     private boolean isSymbol(Point p) {
-      return grid.get(p) != null && grid.get(p) instanceof Cell.Symbol;
+      return !isEmpty(p) && grid.get(p) instanceof Cell.Symbol;
     }
 
     public int sumGearRatios() {
@@ -171,11 +175,11 @@ public class Day03 extends Day {
           .mapToObj(y -> IntStream.range(0, width).mapToObj(x -> Point.of(x, y)))
           .reduce(Stream::concat)
           .orElseThrow()
-          .filter(this::isPossibleGear)
+          .filter(this::isPossibleGearPoint)
           .toList();
     }
 
-    private boolean isPossibleGear(Point p) {
+    private boolean isPossibleGearPoint(Point p) {
       return isSymbol(p) && ((Cell.Symbol) grid.get(p)).symbol() == '*';
     }
   }
