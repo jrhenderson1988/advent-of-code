@@ -22,12 +22,12 @@ public class Day03 extends Day {
 
   @Override
   public Optional<String> part1() {
-    return Optional.of(String.valueOf(schematic.sumPartNumbers()));
+    return answer(schematic.sumPartNumbers());
   }
 
   @Override
   public Optional<String> part2() {
-    return Optional.of(String.valueOf(schematic.sumGearRatios()));
+    return answer(schematic.sumGearRatios());
   }
 
   private sealed interface Cell {

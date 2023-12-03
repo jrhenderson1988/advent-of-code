@@ -22,12 +22,13 @@ public class Day02 extends Day {
         .filter(Game::isPossible)
         .map(Game::id)
         .reduce(Integer::sum)
-        .map(String::valueOf);
+        .map(this::answer)
+        .orElseThrow();
   }
 
   @Override
   public Optional<String> part2() {
-    return games.stream().map(Game::power).reduce(Integer::sum).map(String::valueOf);
+    return games.stream().map(Game::power).reduce(Integer::sum).map(this::answer).orElseThrow();
   }
 
   record Game(int id, List<Handful> handfuls) {
