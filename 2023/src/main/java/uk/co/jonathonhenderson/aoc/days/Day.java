@@ -10,4 +10,8 @@ public abstract class Day {
   protected Optional<String> answer(int answer) {
     return Optional.of(String.valueOf(answer));
   }
+
+  protected Optional<String> nothing() {
+    return Optional.empty();
+  }
 }
