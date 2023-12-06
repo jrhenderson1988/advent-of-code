@@ -51,13 +51,13 @@ public class Day06 extends Day {
 
     public Race getCorrectedRace() {
       var timeLimit =
-          Long.valueOf(
+          Long.parseLong(
               races.stream()
                   .map(r -> String.valueOf(r.timeLimit()))
                   .reduce((a, b) -> a + b)
                   .orElseThrow());
       var record =
-          Long.valueOf(
+          Long.parseLong(
               races.stream()
                   .map(r -> String.valueOf(r.record()))
                   .reduce((a, b) -> a + b)
