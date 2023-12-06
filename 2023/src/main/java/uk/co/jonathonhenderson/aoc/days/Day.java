@@ -15,7 +15,7 @@ public abstract class Day {
     return Optional.of(String.valueOf(answer));
   }
 
-  protected Optional<String> nothing() {
+  protected Optional<String> answer() {
     return Optional.empty();
   }
 }
