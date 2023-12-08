@@ -1,5 +1,6 @@
 package uk.co.jonathonhenderson.aoc.days;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ public class Day08 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(instructions.countStepsToEndAsGhost());
   }
 
   private enum Direction {
@@ -70,17 +71,51 @@ public class Day08 extends Day {
       var current = "AAA";
       var i = 0;
       while (!current.equals("ZZZ")) {
-        var options = this.nodes.get(current);
-        var direction = this.directions.get(i % directions.size());
-
-        current =
-            switch (direction) {
-              case LEFT -> options.left();
-              case RIGHT -> options.right();
-            };
+        current = takeStep(current, i);
         i++;
       }
       return i;
+    }
+
+    public long countStepsToEndAsGhost() {
+      var positions = this.nodes.keySet().stream().filter(k -> k.endsWith("A")).toList();
+
+      var totals = new ArrayList<Long>();
+      for (var position : positions) {
+        var i = 0;
+        var current = position;
+        while (!current.endsWith("Z")) {
+          current = takeStep(current, i);
+          i++;
+        }
+        totals.add((long)i);
+      }
+
+      return totals.stream().reduce(this::lcm).orElseThrow();
+    }
+
+    private String takeStep(String current, int step) {
+      var node = this.nodes.get(current);
+      var direction = directions.get(step % directions.size());
+      return switch (direction) {
+        case LEFT -> node.left();
+        case RIGHT -> node.right();
+      };
+    }
+
+    private long lcm(long number1, long number2) {
+      if (number1 == 0 || number2 == 0) {
+        return 0;
+      }
+      var absNumber1 = Math.abs(number1);
+      var absNumber2 = Math.abs(number2);
+      var absHigherNumber = Math.max(absNumber1, absNumber2);
+      var absLowerNumber = Math.min(absNumber1, absNumber2);
+      var lcm = absHigherNumber;
+      while (lcm % absLowerNumber != 0) {
+        lcm += absHigherNumber;
+      }
+      return lcm;
     }
   }
 }
