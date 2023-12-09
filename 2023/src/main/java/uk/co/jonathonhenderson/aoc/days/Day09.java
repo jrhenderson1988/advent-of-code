@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 public class Day09 extends Day {
 
@@ -21,7 +20,7 @@ public class Day09 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(oasisReport.sumOfReverseExtrapolatedValues());
   }
 
   private record OasisReport(List<List<Long>> readings) {
@@ -40,11 +39,36 @@ public class Day09 extends Day {
       return readings.stream().map(this::extrapolate).reduce(Long::sum).orElseThrow();
     }
 
+    public long sumOfReverseExtrapolatedValues() {
+      return readings.stream().map(this::reverseExtrapolate).reduce(Long::sum).orElseThrow();
+    }
+
     private long extrapolate(List<Long> reading) {
       var layers = buildLayers(reading);
       var nextDiff = nextDifference(layers);
 
       return reading.get(reading.size() - 1) + nextDiff;
+    }
+
+    private long reverseExtrapolate(List<Long> reading) {
+      var layers = buildLayers(reading);
+      var prevDiff = previousDifference(layers);
+
+      return reading.get(0) - prevDiff;
+    }
+
+    private long previousDifference(List<List<Long>> layers) {
+      if (layers.size() == 1) {
+        return 0;
+      }
+
+      var prevDiff = 0L;
+      for (var i = layers.size() - 2; i >= 0; i--) {
+        var layer = layers.get(i);
+        var firstValue = layer.get(0);
+        prevDiff = firstValue - prevDiff;
+      }
+      return prevDiff;
     }
 
     private long nextDifference(List<List<Long>> layers) {

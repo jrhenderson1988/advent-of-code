@@ -20,6 +20,6 @@ class Day09Test {
 
   @Test
   void part2() {
-    assertEquals(Optional.of(""), new Day09(INPUT).part2());
+    assertEquals(Optional.of("2"), new Day09(INPUT).part2());
   }
 }
