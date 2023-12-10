@@ -22,7 +22,7 @@ public class Day10 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(grid.totalTilesWithinLoop());
   }
 
   private enum Tile {
@@ -137,6 +137,59 @@ public class Day10 extends Day {
       }
 
       return distance / 2;
+    }
+
+    public int totalTilesWithinLoop() {
+      var currentDelta = pipes.get(start).deltas().keySet().stream().findFirst().orElseThrow();
+      var current = start.translate(currentDelta);
+
+      var actualLoop = new HashMap<Point, Tile>();
+      actualLoop.put(start, pipes.get(start));
+      while (!current.equals(start)) {
+        var tile = pipes.get(current);
+        actualLoop.put(current, tile);
+        var flipped = currentDelta.flip();
+        var deltas = tile.deltas();
+        var nextDeltas = deltas.keySet().stream().filter(d -> !d.equals(flipped)).toList();
+        if (nextDeltas.size() != 1) {
+          throw new IllegalArgumentException("unexpected deltas");
+        }
+        var nextDelta = nextDeltas.getFirst();
+        current = current.translate(nextDelta);
+        currentDelta = nextDelta;
+      }
+
+      // actual loop contains only the points part of the actual pipe loop, all other junk pipes are
+      // removed and considered to be empty tiles for the purposes of counting
+
+      var total = 0;
+      for (var x = 0; x < width; x++) {
+        for (var y = 0; y < height; y++) {
+          var point = Point.of(x, y);
+          if (actualLoop.containsKey(point)) {
+            continue;
+          }
+
+          // work out if this empty tile is inside or outside the loop
+          if (isTileInside(actualLoop, point)) {
+            total++;
+          }
+        }
+      }
+
+      return total;
+    }
+
+    private boolean isTileInside(HashMap<Point, Tile> pipes, Point point) {
+      var n = 0;
+      var tiles = Set.of(Tile.VERTICAL, Tile.TOP_LEFT, Tile.TOP_RIGHT);
+      for (var x = point.x(); x < width; x++) {
+        var pt = Point.of(x, point.y());
+        if (pipes.containsKey(pt) && tiles.contains(pipes.get(pt))) {
+          n++;
+        }
+      }
+      return n % 2 == 1;
     }
   }
 }
