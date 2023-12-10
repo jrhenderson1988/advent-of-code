@@ -8,7 +8,7 @@ public record Point(int x, int y) {
   }
 
   public Point translate(Point other) {
-    return new Point(this.x + other.x(), this.y + other.y());
+    return Point.of(this.x + other.x(), this.y + other.y());
   }
 
   public List<Point> neighbours() {
@@ -24,6 +24,6 @@ public record Point(int x, int y) {
   }
 
   public Point flip() {
-    return new Point(this.x * -1, this.y * -1);
+    return Point.of(this.x * -1, this.y * -1);
   }
 }
