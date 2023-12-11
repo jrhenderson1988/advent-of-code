@@ -19,13 +19,13 @@ public class Day11 extends Day {
     return answer(galaxy.expand(2).sumOfDistancesBetweenAllPoints());
   }
 
-  public Optional<String> part2(int expansionFactor) {
-    return answer(galaxy.expand(expansionFactor).sumOfDistancesBetweenAllPoints());
-  }
-
   @Override
   public Optional<String> part2() {
     return part2(1000000);
+  }
+
+  public Optional<String> part2(int expansionFactor) {
+    return answer(galaxy.expand(expansionFactor).sumOfDistancesBetweenAllPoints());
   }
 
   private enum Cell {
@@ -91,39 +91,35 @@ public class Day11 extends Day {
               .filter(pt -> cellAt(pt.x(), pt.y()).equals(Cell.GALAXY))
               .toList();
 
-      var sum = 0L;
-      for (var a = 0; a < allGalaxies.size(); a++) {
-        var pointA = allGalaxies.get(a);
-        for (var b = a + 1; b < allGalaxies.size(); b++) {
-          var pointB = allGalaxies.get(b);
-          sum += distanceBetween(pointA, pointB, emptyRows, emptyCols);
-        }
-      }
-
-      return sum;
+      return IntStream.range(0, allGalaxies.size())
+          .mapToObj(
+              a ->
+                  IntStream.range(a + 1, allGalaxies.size())
+                      .mapToObj(
+                          b ->
+                              distanceBetween(
+                                  allGalaxies.get(a), allGalaxies.get(b), emptyRows, emptyCols)))
+          .reduce(Stream::concat)
+          .orElseThrow()
+          .reduce(Long::sum)
+          .orElseThrow();
     }
 
     private long distanceBetween(
         Point a, Point b, List<Integer> emptyRows, List<Integer> emptyCols) {
       var crossedEmptyCols =
-          (int)
-              emptyCols.stream()
-                  .filter(col -> col >= Math.min(a.x(), b.x()))
-                  .filter(col -> col <= Math.max(a.x(), b.x()))
-                  .count();
+          emptyCols.stream()
+              .filter(col -> col >= Math.min(a.x(), b.x()))
+              .filter(col -> col <= Math.max(a.x(), b.x()))
+              .count();
       var crossedEmptyRows =
-          (int)
-              emptyRows.stream()
-                  .filter(row -> row >= Math.min(a.y(), b.y()))
-                  .filter(row -> row <= Math.max(a.y(), b.y()))
-                  .count();
+          emptyRows.stream()
+              .filter(row -> row >= Math.min(a.y(), b.y()))
+              .filter(row -> row <= Math.max(a.y(), b.y()))
+              .count();
 
-      var xDist =
-          (Math.abs(a.x() - b.x()) - crossedEmptyCols) + (expansionFactor * crossedEmptyCols);
-      var yDist =
-          (Math.abs(a.y() - b.y()) - crossedEmptyRows) + (expansionFactor * crossedEmptyRows);
-
-      return xDist + yDist;
+      return ((Math.abs(a.x() - b.x()) - crossedEmptyCols) + (expansionFactor * crossedEmptyCols))
+          + ((Math.abs(a.y() - b.y()) - crossedEmptyRows) + (expansionFactor * crossedEmptyRows));
     }
 
     private Cell cellAt(int x, int y) {
