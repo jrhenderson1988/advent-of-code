@@ -1,6 +1,5 @@
 package uk.co.jonathonhenderson.aoc.days;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -17,12 +16,16 @@ public class Day11 extends Day {
 
   @Override
   public Optional<String> part1() {
-    return answer(galaxy.expand().sumOfDistancesBetweenAllPoints());
+    return answer(galaxy.expand(2).sumOfDistancesBetweenAllPoints());
+  }
+
+  public Optional<String> part2(int expansionFactor) {
+    return answer(galaxy.expand(expansionFactor).sumOfDistancesBetweenAllPoints());
   }
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return part2(1000000);
   }
 
   private enum Cell {
@@ -38,7 +41,7 @@ public class Day11 extends Day {
     }
   }
 
-  private record Galaxy(List<List<Cell>> cells) {
+  private record Galaxy(List<List<Cell>> cells, int expansionFactor) {
     public static Galaxy parse(String input) {
       var cells =
           input
@@ -47,30 +50,11 @@ public class Day11 extends Day {
               .map(line -> line.trim().chars().mapToObj(ch -> Cell.of((char) ch)).toList())
               .toList();
 
-      return new Galaxy(cells);
+      return new Galaxy(cells, 1);
     }
 
-    public Galaxy expand() {
-      var emptyCols = findEmptyColumns();
-      var emptyRows = findEmptyRows();
-      var newCells = new ArrayList<List<Cell>>();
-
-      for (var y = 0; y < height(); y++) {
-        var row = new ArrayList<Cell>();
-        for (var x = 0; x < width(); x++) {
-          row.add(cellAt(x, y));
-          if (emptyCols.contains(x)) {
-            row.add(cellAt(x, y));
-          }
-        }
-        newCells.add(row);
-        if (emptyRows.contains(y)) {
-          newCells.add(row);
-        }
-      }
-
-      // System.out.println("Empty rows: %s, empty cols: %s".formatted(emptyRows, emptyCols));
-      return new Galaxy(newCells);
+    public Galaxy expand(int expansionFactor) {
+      return new Galaxy(cells, expansionFactor);
     }
 
     private List<Integer> findEmptyColumns() {
@@ -95,7 +79,10 @@ public class Day11 extends Day {
           .toList();
     }
 
-    public int sumOfDistancesBetweenAllPoints() {
+    public long sumOfDistancesBetweenAllPoints() {
+      var emptyCols = findEmptyColumns();
+      var emptyRows = findEmptyRows();
+
       var allGalaxies =
           IntStream.range(0, width())
               .mapToObj(x -> IntStream.range(0, height()).mapToObj(y -> Point.of(x, y)))
@@ -104,17 +91,39 @@ public class Day11 extends Day {
               .filter(pt -> cellAt(pt.x(), pt.y()).equals(Cell.GALAXY))
               .toList();
 
-      var sum = 0;
+      var sum = 0L;
       for (var a = 0; a < allGalaxies.size(); a++) {
         var pointA = allGalaxies.get(a);
         for (var b = a + 1; b < allGalaxies.size(); b++) {
           var pointB = allGalaxies.get(b);
-//          System.out.println("Dist (%s-> %s) = %d".formatted(pointA, pointB, pointA.manhattanDistanceTo(pointB)));
-          sum += pointA.manhattanDistanceTo(pointB);
+          sum += distanceBetween(pointA, pointB, emptyRows, emptyCols);
         }
       }
 
       return sum;
+    }
+
+    private long distanceBetween(
+        Point a, Point b, List<Integer> emptyRows, List<Integer> emptyCols) {
+      var crossedEmptyCols =
+          (int)
+              emptyCols.stream()
+                  .filter(col -> col >= Math.min(a.x(), b.x()))
+                  .filter(col -> col <= Math.max(a.x(), b.x()))
+                  .count();
+      var crossedEmptyRows =
+          (int)
+              emptyRows.stream()
+                  .filter(row -> row >= Math.min(a.y(), b.y()))
+                  .filter(row -> row <= Math.max(a.y(), b.y()))
+                  .count();
+
+      var xDist =
+          (Math.abs(a.x() - b.x()) - crossedEmptyCols) + (expansionFactor * crossedEmptyCols);
+      var yDist =
+          (Math.abs(a.y() - b.y()) - crossedEmptyRows) + (expansionFactor * crossedEmptyRows);
+
+      return xDist + yDist;
     }
 
     private Cell cellAt(int x, int y) {
