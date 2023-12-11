@@ -122,8 +122,8 @@ public class Day11 extends Day {
           + ((Math.abs(a.y() - b.y()) - crossedEmptyRows) + (expansionFactor * crossedEmptyRows));
     }
 
-    private Cell cellAt(int x, int y) {
-      return cells.get(y).get(x);
+    private Cell cellAt(long x, long y) {
+      return cells.get((int) y).get((int) x);
     }
 
     private int width() {

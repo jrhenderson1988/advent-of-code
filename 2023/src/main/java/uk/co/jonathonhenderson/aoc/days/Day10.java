@@ -166,7 +166,7 @@ public class Day10 extends Day {
 
     private int countInclusiveVerticalTilesInRow(Map<Point, Tile> pipes, Point point) {
       return (int)
-          IntStream.range(point.x(), width)
+          IntStream.range((int) point.x(), width)
               .mapToObj(x -> Point.of(x, point.y()))
               .filter(pipes::containsKey)
               .filter(pt -> INCLUSIVE_VERTICAL_TILES.contains(pipes.get(pt)))

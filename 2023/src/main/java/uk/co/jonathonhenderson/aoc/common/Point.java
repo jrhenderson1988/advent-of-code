@@ -2,9 +2,13 @@ package uk.co.jonathonhenderson.aoc.common;
 
 import java.util.List;
 
-public record Point(int x, int y) {
-  public static Point of(int x, int y) {
+public record Point(long x, long y) {
+  public static Point of(long x, long y) {
     return new Point(x, y);
+  }
+
+  public static Point of(int x, int y) {
+    return Point.of((long) x, (long) y);
   }
 
   public Point translate(Point other) {
@@ -27,7 +31,7 @@ public record Point(int x, int y) {
     return Point.of(this.x * -1, this.y * -1);
   }
 
-  public int manhattanDistanceTo(Point other) {
+  public long manhattanDistanceTo(Point other) {
     return Math.abs(this.x() - other.x()) + Math.abs(this.y() - other.y());
   }
 }
