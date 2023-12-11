@@ -26,4 +26,8 @@ public record Point(int x, int y) {
   public Point flip() {
     return Point.of(this.x * -1, this.y * -1);
   }
+
+  public int manhattanDistanceTo(Point other) {
+    return Math.abs(this.x() - other.x()) + Math.abs(this.y() - other.y());
+  }
 }
