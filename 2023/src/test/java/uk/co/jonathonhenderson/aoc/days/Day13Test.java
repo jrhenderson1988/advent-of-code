@@ -32,6 +32,6 @@ class Day13Test {
 
   @Test
   void part2() {
-    assertEquals(Optional.empty(), new Day13(INPUT).part2());
+    assertEquals(Optional.of("400"), new Day13(INPUT).part2());
   }
 }

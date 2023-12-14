@@ -1,8 +1,12 @@
 package uk.co.jonathonhenderson.aoc.days;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import uk.co.jonathonhenderson.aoc.common.Lines;
 
 public class Day13 extends Day {
@@ -20,7 +24,7 @@ public class Day13 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(patterns.getSummaryWithAlteredReflections());
   }
 
   private enum Cell {
@@ -35,6 +39,13 @@ public class Day13 extends Day {
       };
     }
 
+    public Cell flip() {
+      return switch (this) {
+        case ASH -> ROCK;
+        case ROCK -> ASH;
+      };
+    }
+
     @Override
     public String toString() {
       return switch (this) {
@@ -44,23 +55,32 @@ public class Day13 extends Day {
     }
   }
 
+  private record ReflectionLine(int position, boolean horizontal) {
+    public int getValue() {
+      return horizontal ? 100 * position : position;
+    }
+  }
+
   private record Patterns(List<Grid> grids) {
     public static Patterns parse(String input) {
       return new Patterns(Lines.splitByEmptyLines(input.trim()).map(Grid::parse).toList());
     }
 
     public int getSummary() {
-      var colSum =
-          grids.stream()
-              .map(Grid::totalColumnsBeforeReflectionLine)
-              .reduce(Integer::sum)
-              .orElseThrow();
+      return grids.stream()
+          .map(Grid::findFirstReflectionLine)
+          .map(ReflectionLine::getValue)
+          .reduce(Integer::sum)
+          .orElseThrow();
+    }
 
-      var rowSum =
-          grids.stream().map(Grid::totalRowsAboveReflectionLine).reduce(Integer::sum).orElseThrow()
-              * 100;
-
-      return colSum + rowSum;
+    public int getSummaryWithAlteredReflections() {
+      return grids.stream()
+          .map(Grid::findAlternativeReflectionLineAfterFixingSmudge)
+          .filter(Objects::nonNull)
+          .map(ReflectionLine::getValue)
+          .reduce(Integer::sum)
+          .orElseThrow();
     }
 
     @Override
@@ -79,14 +99,61 @@ public class Day13 extends Day {
               .toList());
     }
 
-    public int totalColumnsBeforeReflectionLine() {
+    private List<List<Cell>> flipCell(int x, int y) {
+      var height = cells.size();
       var width = cells.getFirst().size();
-      for (var x = 0; x < width - 1; x++) {
-        if (isReflectionAtColumn(x)) {
-          return x + 1;
+      return IntStream.range(0, height)
+          .mapToObj(
+              i ->
+                  IntStream.range(0, width)
+                      .mapToObj(
+                          j -> i == y && j == x ? cells.get(i).get(j).flip() : cells.get(i).get(j))
+                      .toList())
+          .toList();
+    }
+
+    public ReflectionLine findFirstReflectionLine() {
+      return findReflectionLines().getFirst();
+    }
+
+    public ReflectionLine findAlternativeReflectionLineAfterFixingSmudge() {
+      var first = findFirstReflectionLine();
+      var height = cells.size();
+      var width = cells.getFirst().size();
+
+      for (var x = 0; x < width; x++) {
+        for (var y = 0; y < height; y++) {
+          var newCells = flipCell(x, y);
+          var newGrid = new Grid(newCells);
+
+          for (var rl : newGrid.findReflectionLines()) {
+            if (!rl.equals(first)) {
+              return rl;
+            }
+          }
         }
       }
-      return 0;
+
+      return null;
+    }
+
+    public List<ReflectionLine> findReflectionLines() {
+      return Stream.of(
+              findVerticalReflectionLines().stream(), findHorizontalReflectionLines().stream())
+          .reduce(Stream::concat)
+          .orElseThrow()
+          .toList();
+    }
+
+    public List<ReflectionLine> findVerticalReflectionLines() {
+      var width = cells.getFirst().size();
+      var lines = new ArrayList<ReflectionLine>();
+      for (var x = 0; x < width - 1; x++) {
+        if (isReflectionAtColumn(x)) {
+          lines.add(new ReflectionLine(x + 1, false));
+        }
+      }
+      return lines;
     }
 
     private boolean isReflectionAtColumn(int x) {
@@ -106,14 +173,15 @@ public class Day13 extends Day {
       return true;
     }
 
-    public int totalRowsAboveReflectionLine() {
+    public List<ReflectionLine> findHorizontalReflectionLines() {
       var height = cells.size();
+      var lines = new ArrayList<ReflectionLine>();
       for (var y = 0; y < height - 1; y++) {
         if (isReflectionAtRow(y)) {
-          return y + 1;
+          lines.add(new ReflectionLine(y + 1, true));
         }
       }
-      return 0;
+      return lines;
     }
 
     private boolean isReflectionAtRow(int y) {
