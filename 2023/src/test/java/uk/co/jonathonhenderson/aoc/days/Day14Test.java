@@ -27,6 +27,16 @@ class Day14Test {
 
   @Test
   void part2() {
-    assertEquals(Optional.empty(), new Day14(INPUT).part2());
+    // 100
+    // 9, 15, 21
+
+    // new times = 100 - 9 = 91
+    // happens every 6
+
+    // 100 - 9 = 91
+    // 91 % 6 = 1 more cycles
+
+//    System.out.println(((1000000000 - 9) / 9));
+    assertEquals(Optional.of("64"), new Day14(INPUT).part2());
   }
 }

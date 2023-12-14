@@ -1,9 +1,11 @@
 package uk.co.jonathonhenderson.aoc.days;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import uk.co.jonathonhenderson.aoc.common.Direction;
 
 public class Day14 extends Day {
 
@@ -15,15 +17,12 @@ public class Day14 extends Day {
 
   @Override
   public Optional<String> part1() {
-    // System.out.println(grid);
-    // System.out.println("========");
-    // System.out.println(grid.tilt());
     return answer(grid.totalLoadOnNorthSide());
   }
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(grid.spinCycle(1000000000).calculateLoad());
   }
 
   private enum Cell {
@@ -61,30 +60,80 @@ public class Day14 extends Day {
     }
 
     public int totalLoadOnNorthSide() {
-      return tilt().calculateLoad();
+      return tilt(Direction.NORTH).calculateLoad();
     }
 
-    public Grid tilt() {
+    public Grid spinCycle(long times) {
+      var grid = this;
+
+      var seen = new HashMap<Grid, Long>();
+      for (var i = 0L; i < times; i++) {
+        grid = grid.spinCycle();
+        if (seen.containsKey(grid)) {
+          return shortCircuit(times, grid, i);
+        }
+        seen.put(grid, i);
+      }
+      return grid;
+    }
+
+    private Grid shortCircuit(long times, Grid grid, long pos) {
+      var current = grid;
+
+      var every = 1;
+      while (every < times) {
+        current = current.spinCycle();
+        if (current.equals(grid)) {
+          break;
+        }
+        every++;
+      }
+
+      var newTimes = times - pos;
+      var newPos = newTimes - (newTimes % every);
+      var iterationsLeft = newTimes - newPos - 1;
+
+      current = grid;
+      for (var i = 0L; i < iterationsLeft; i++) {
+        current = current.spinCycle();
+      }
+
+      return current;
+    }
+
+    public Grid spinCycle() {
+      return tilt(Direction.NORTH).tilt(Direction.WEST).tilt(Direction.SOUTH).tilt(Direction.EAST);
+    }
+
+    public Grid tilt(Direction direction) {
       var height = cells.size();
       var width = cells.getFirst().size();
+      var oppositeDelta = direction.opposite().delta();
 
       var newCells =
           new ArrayList<>(
               cells.stream().map(row -> new ArrayList<>(row.stream().toList())).toList());
       while (true) {
         var movements = false;
-        for (var y = 0; y < height - 1; y++) {
+        for (var y = 0; y < height; y++) {
           for (var x = 0; x < width; x++) {
             var curr = newCells.get(y).get(x);
             if (curr.equals(Cell.SPACE)) {
-              var under = newCells.get(y + 1).get(x);
-              if (under.equals(Cell.ROUND_ROCK)) {
+              var nextY = (int) oppositeDelta.y() + y;
+              var nextX = (int) oppositeDelta.x() + x;
+              if (nextX < 0 || nextX >= width || nextY < 0 || nextY >= height) {
+                continue;
+              }
+
+              var next = newCells.get(nextY).get(nextX);
+              if (next.equals(Cell.ROUND_ROCK)) {
                 var currRow = newCells.get(y);
                 currRow.set(x, Cell.ROUND_ROCK);
                 newCells.set(y, currRow);
-                var nextRow = newCells.get(y + 1);
-                nextRow.set(x, Cell.SPACE);
-                newCells.set(y + 1, nextRow);
+
+                var nextRow = newCells.get(nextY);
+                nextRow.set(nextX, Cell.SPACE);
+                newCells.set(nextY, nextRow);
 
                 movements = true;
               }
