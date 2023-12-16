@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import uk.co.jonathonhenderson.aoc.common.Direction;
 import uk.co.jonathonhenderson.aoc.common.Point;
@@ -20,12 +21,12 @@ public class Day16 extends Day {
 
   @Override
   public Optional<String> part1() {
-    return answer(grid.totalEnergisedCells());
+    return answer(grid.totalEnergisedCells(Point.of(0, 0), Direction.EAST));
   }
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(grid.maximumEnergisedCells());
   }
 
   private enum Cell {
@@ -66,28 +67,43 @@ public class Day16 extends Day {
       return new Grid(cells);
     }
 
-    public int totalEnergisedCells() {
-      return tracePath().size();
+    public int totalEnergisedCells(Point start, Direction direction) {
+      return tracePath(start, direction).size();
     }
 
-    private Set<Point> tracePath() {
-      var current = Point.of(0, 0);
-      var direction = Direction.EAST;
-      var states = List.of(State.of(current, direction));
-      var occupied = new HashSet<>(List.of(current));
+    public int maximumEnergisedCells() {
+      var width = cells.keySet().stream().map(Point::x).reduce(Long::max).orElseThrow();
+      var height = cells.keySet().stream().map(Point::y).reduce(Long::max).orElseThrow();
+
+      var top = LongStream.range(0, width).mapToObj(x -> totalEnergisedCells(Point.of(x, 0), Direction.SOUTH)).reduce(Integer::max).orElseThrow();
+      var left = LongStream.range(0, height).mapToObj(y -> totalEnergisedCells(Point.of(0, y), Direction.EAST)).reduce(Integer::max).orElseThrow();
+      var bottom = LongStream.range(0, width).mapToObj(x -> totalEnergisedCells(Point.of(x, height - 1), Direction.NORTH)).reduce(Integer::max).orElseThrow();
+      var right = LongStream.range(0, height).mapToObj(y -> totalEnergisedCells(Point.of(width - 1, y), Direction.WEST)).reduce(Integer::max).orElseThrow();
+      return List.of(top, left, bottom, right).stream().reduce(Integer::max).orElseThrow();
+    }
+
+    private Set<Point> tracePath(Point start, Direction initialDirection) {
+      var states = List.of(State.of(start, initialDirection));
+      var occupied = new HashSet<>(List.of(start));
       var seen = new HashSet<>(states);
       while (!states.isEmpty()) {
-        states = states.stream().map(this::apply).flatMap(List::stream).filter(state -> !seen.contains(state)).toList();
-        states.forEach(s -> {
-          occupied.add(s.position());
-          seen.add(s);
-        });
+        states =
+            states.stream()
+                .map(this::apply)
+                .flatMap(List::stream)
+                .filter(state -> !seen.contains(state))
+                .toList();
+        states.forEach(
+            s -> {
+              occupied.add(s.position());
+              seen.add(s);
+            });
 
-//        print(occupied);
-//        try {
-//          Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//        }
+        //        print(occupied);
+        //        try {
+        //          Thread.sleep(1000);
+        //        } catch (InterruptedException e) {
+        //        }
       }
       return occupied;
     }
@@ -103,13 +119,14 @@ public class Day16 extends Day {
           if (taken.contains(point)) {
             line.append("#");
           } else {
-            line.append(switch (cells.get(point)) {
-              case SPACE -> ".";
-              case FORWARD_MIRROR -> "/";
-              case BACKWARD_MIRROR -> "\\";
-              case HORIZONTAL_SPLITTER -> "-";
-              case VERTICAL_SPLITTER -> "|";
-            });
+            line.append(
+                switch (cells.get(point)) {
+                  case SPACE -> ".";
+                  case FORWARD_MIRROR -> "/";
+                  case BACKWARD_MIRROR -> "\\";
+                  case HORIZONTAL_SPLITTER -> "-";
+                  case VERTICAL_SPLITTER -> "|";
+                });
           }
         }
         System.out.println(line);

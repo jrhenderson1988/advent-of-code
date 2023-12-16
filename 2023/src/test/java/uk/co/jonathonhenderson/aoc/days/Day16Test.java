@@ -27,6 +27,6 @@ class Day16Test {
 
   @Test
   void part2() {
-    assertEquals(Optional.empty(), new Day16(INPUT).part2());
+    assertEquals(Optional.of("51"), new Day16(INPUT).part2());
   }
 }
