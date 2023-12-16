@@ -1,9 +1,14 @@
 package uk.co.jonathonhenderson.aoc.days;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import uk.co.jonathonhenderson.aoc.common.Triple;
 
 public class Day12 extends Day {
 
@@ -20,7 +25,9 @@ public class Day12 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    // This was tough - took inspiration from this in the end:
+    // https://github.com/jonathanpaulson/AdventOfCode/blob/master/2023/12.py
+    return answer(conditionRecords.multiply(5).sumOfPossibleArrangements());
   }
 
   private enum Status {
@@ -36,9 +43,18 @@ public class Day12 extends Day {
         default -> throw new IllegalArgumentException("Unknown status");
       };
     }
+
+    @Override
+    public String toString() {
+      return switch (this) {
+        case OPERATIONAL -> ".";
+        case DAMAGED -> "#";
+        case UNKNOWN -> "?";
+      };
+    }
   }
 
-  private record ConditionRecord(List<Status> arrangement, List<Integer> groups) {
+  public record ConditionRecord(List<Status> arrangement, List<Integer> groups) {
     public static ConditionRecord parse(String line) {
       var parts = line.trim().split("\\s+");
       if (parts.length != 2) {
@@ -49,77 +65,75 @@ public class Day12 extends Day {
       return new ConditionRecord(arrangement, groups);
     }
 
-    public int totalPossibleArrangements() {
-      var totalUnknowns = (int) arrangement.stream().filter(Status.UNKNOWN::equals).count();
-      var total = 0;
-      for (var i = 0; i <= getMaxIterations(totalUnknowns); i++) {
-        var replacements = getReplacements(i, totalUnknowns);
-        var possibleArrangement = applyReplacements(replacements);
-        if (isArrangementPossible(possibleArrangement)) {
-          total++;
-        }
-      }
-
-      return total;
+    public long totalPossibleArrangements() {
+      return countPossibleArrangements(0, 0, 0, new HashMap<>());
     }
 
-    private boolean isArrangementPossible(List<Status> possibleArrangement) {
-      return groups().equals(toGroup(possibleArrangement));
-    }
-
-    private List<Integer> toGroup(List<Status> possibleArrangement) {
-      var group = new ArrayList<Integer>();
-
-      var contiguous = 0;
-      for (var s : possibleArrangement) {
-        if (s.equals(Status.OPERATIONAL) && contiguous > 0) {
-          group.add(contiguous);
-          contiguous = 0;
-        } else if (s.equals(Status.DAMAGED)) {
-          contiguous++;
-        }
+    private long countPossibleArrangements(
+        int i, int gi, int currGroupSize, Map<Triple<Integer, Integer, Integer>, Long> cache) {
+      var key = Triple.of(i, gi, currGroupSize);
+      if (cache.containsKey(key)) {
+        return cache.get(key);
       }
 
-      if (contiguous > 0) {
-        group.add(contiguous);
-      }
-
-      return group;
-    }
-
-    private List<Status> applyReplacements(List<Status> replacements) {
-      var replaced = new ArrayList<Status>();
-      var nextReplacement = 0;
-      for (var status : arrangement) {
-        if (status.equals(Status.UNKNOWN)) {
-          replaced.add(replacements.get(nextReplacement));
-          nextReplacement++;
+      if (i == arrangement.size()) {
+        if (gi == groups.size() && currGroupSize == 0) {
+          return 1;
+        } else if (gi == groups.size() - 1 && groups.get(gi) == currGroupSize) {
+          return 1;
         } else {
-          replaced.add(status);
+          return 0;
         }
       }
 
-      return replaced;
+      var answer = 0L;
+      if (getStatusAt(i).equals(Status.OPERATIONAL) || getStatusAt(i).equals(Status.UNKNOWN)) {
+        if (currGroupSize == 0) {
+          answer += countPossibleArrangements(i + 1, gi, 0, cache);
+        } else if (currGroupSize > 0 && gi < groups.size() && groups.get(gi) == currGroupSize) {
+          answer += countPossibleArrangements(i + 1, gi + 1, 0, cache);
+        }
+      }
+
+      if (getStatusAt(i).equals(Status.DAMAGED) || getStatusAt(i).equals(Status.UNKNOWN)) {
+        answer += countPossibleArrangements(i + 1, gi, currGroupSize + 1, cache);
+      }
+
+      cache.put(key, answer);
+
+      return answer;
     }
 
-    private List<Status> getReplacements(int n, int size) {
-      return toBinaryString(n, size).chars().mapToObj(ch -> toReplacement((char) ch)).toList();
+    private Status getStatusAt(int n) {
+      return arrangement.get(n);
     }
 
-    private Status toReplacement(char c) {
-      return switch (c) {
-        case '1' -> Status.DAMAGED;
-        case '0' -> Status.OPERATIONAL;
-        default -> throw new IllegalArgumentException("Unexpected char");
-      };
+    @Override
+    public String toString() {
+      return arrangement.stream().map(Status::toString).collect(Collectors.joining())
+          + " "
+          + groups.stream().map(c -> "" + c).collect(Collectors.joining(","));
     }
 
-    private String toBinaryString(int n, int chars) {
-      return String.format("%" + chars + "s", Integer.toBinaryString(n)).replace(' ', '0');
-    }
+    public ConditionRecord multiply(int times) {
+      var newArrangement =
+          IntStream.range(0, times)
+              .mapToObj(
+                  i ->
+                      i == times - 1
+                          ? arrangement.stream()
+                          : Stream.concat(arrangement.stream(), Stream.of(Status.UNKNOWN)))
+              .reduce(Stream::concat)
+              .orElseThrow()
+              .toList();
+      var newGroups =
+          IntStream.range(0, times)
+              .mapToObj(i -> groups.stream())
+              .reduce(Stream::concat)
+              .orElseThrow()
+              .toList();
 
-    private int getMaxIterations(int n) {
-      return (0xffffffff << n) ^ 0xffffffff;
+      return new ConditionRecord(newArrangement, newGroups);
     }
   }
 
@@ -128,10 +142,14 @@ public class Day12 extends Day {
       return new ConditionRecords(input.trim().lines().map(ConditionRecord::parse).toList());
     }
 
-    public int sumOfPossibleArrangements() {
+    public ConditionRecords multiply(int times) {
+      return new ConditionRecords(records.stream().map(r -> r.multiply(times)).toList());
+    }
+
+    public long sumOfPossibleArrangements() {
       return records.stream()
           .map(ConditionRecord::totalPossibleArrangements)
-          .reduce(Integer::sum)
+          .reduce(Long::sum)
           .orElseThrow();
     }
   }

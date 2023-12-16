@@ -25,6 +25,6 @@ public class Day12Test {
 
   @Test
   void part2() {
-    assertEquals(Optional.empty(), new Day12(INPUT).part2());
+    assertEquals(Optional.of("525152"), new Day12(INPUT).part2());
   }
 }
