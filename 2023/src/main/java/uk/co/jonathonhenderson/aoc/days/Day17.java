@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.function.Predicate;
 import uk.co.jonathonhenderson.aoc.common.Direction;
 import uk.co.jonathonhenderson.aoc.common.Point;
 
@@ -18,12 +19,12 @@ public class Day17 extends Day {
 
   @Override
   public Optional<String> part1() {
-    return answer(grid.findOptimumPath());
+    return answer(grid.findOptimumPathWithNormalCrucible());
   }
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(grid.findOptimumPathWithUltraCrucible());
   }
 
   private record Node(int distance, Point point, Direction direction, int distanceInDirection)
@@ -36,6 +37,12 @@ public class Day17 extends Day {
     public int compareTo(Node o) {
       // priority defined by the distance of the node
       return Integer.compare(this.distance, o.distance);
+    }
+  }
+
+  private record NodeProposal(Node current, Node proposed) {
+    public static NodeProposal of(Node current, Node proposed) {
+      return new NodeProposal(current, proposed);
     }
   }
 
@@ -68,11 +75,57 @@ public class Day17 extends Day {
       return cells.getFirst().size();
     }
 
-    public int findOptimumPath() {
+    private int findOptimumPathWithNormalCrucible() {
+      var start = Point.of(0, 0);
+      var target = Point.of(getWidth() - 1, getHeight() - 1);
+      return findOptimumPath(
+          start, this::isValidProposalForNormalCrucible, key -> keyHitsTarget(key, target));
+    }
+
+    public int findOptimumPathWithUltraCrucible() {
+      var start = Point.of(0, 0);
+      var target = Point.of(getWidth() - 1, getHeight() - 1);
+      return findOptimumPath(
+          start,
+          this::isValidProposalForUltraCrucible,
+          key -> keyHitsTarget(key, target)&& key.distanceInDirection() >= 4);
+    }
+
+    private boolean isValidProposalForNormalCrucible(NodeProposal proposal) {
+      var curr = proposal.current();
+      var proposed = proposal.proposed();
+      var backwards = proposed.direction().opposite().equals(curr.direction());
+      return !backwards && proposed.distanceInDirection() <= 3;
+    }
+
+    private boolean keyHitsTarget(Key key, Point target) {
+      return key.point().equals(target);
+    }
+
+    private boolean isValidProposalForUltraCrucible(NodeProposal proposal) {
+      var curr = proposal.current();
+      var isFirstStep = curr.direction() == null;
+      if (isFirstStep) {
+        return true;
+      }
+
+      var proposed = proposal.proposed();
+
+      var backwards = proposed.direction().opposite().equals(curr.direction());
+      var tooManySteps = proposed.distanceInDirection() > 10;
+      if (backwards || tooManySteps) {
+        return false;
+      }
+
+      var movedMinimumSteps = curr.distanceInDirection() >= 4;
+      var movingSameDirection = proposed.direction().equals(curr.direction());
+      return movedMinimumSteps || movingSameDirection;
+    }
+
+    public int findOptimumPath(
+        Point start, Predicate<NodeProposal> proposalValidator, Predicate<Key> isTarget) {
       var height = getHeight();
       var width = getWidth();
-      var start = Point.of(0, 0);
-      var target = Point.of(width - 1, height - 1);
 
       var q = new PriorityQueue<Node>();
       q.add(Node.of(0, start, null, -1));
@@ -90,17 +143,22 @@ public class Day17 extends Day {
           var neighbour = curr.point().translate(newDirection.delta());
           var newDistanceInDirection =
               newDirection.equals(curr.direction()) ? curr.distanceInDirection() + 1 : 1;
-          if (inBounds(neighbour, width, height)
-              && !newDirection.opposite().equals(curr.direction())
-              && newDistanceInDirection <= 3) {
-            var cost = valueAt(neighbour);
-            q.add(Node.of(curr.distance() + cost, neighbour, newDirection, newDistanceInDirection));
+          if (inBounds(neighbour, width, height)) {
+            var proposed =
+                Node.of(
+                    curr.distance() + valueAt(neighbour),
+                    neighbour,
+                    newDirection,
+                    newDistanceInDirection);
+            if (proposalValidator.test(NodeProposal.of(curr, proposed))) {
+              q.add(proposed);
+            }
           }
         }
       }
 
       return distances.entrySet().stream()
-          .filter(e -> e.getKey().point().equals(target))
+          .filter(e -> isTarget.test(e.getKey()))
           .map(Entry::getValue)
           .reduce(Integer.MAX_VALUE, Math::min);
     }

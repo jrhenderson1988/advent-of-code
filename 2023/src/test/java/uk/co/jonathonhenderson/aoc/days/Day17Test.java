@@ -23,6 +23,15 @@ class Day17Test {
       4322674655533
       """;
 
+  private static final String INPUT2 =
+      """
+      111111111111
+      999999999991
+      999999999991
+      999999999991
+      999999999991
+      """;
+
   @Test
   void part1() {
     assertEquals(Optional.of("102"), new Day17(INPUT).part1());
@@ -30,6 +39,7 @@ class Day17Test {
 
   @Test
   void part2() {
-    assertEquals(Optional.empty(), new Day17(INPUT).part2());
+    assertEquals(Optional.of("94"), new Day17(INPUT).part2());
+    assertEquals(Optional.of("71"), new Day17(INPUT2).part2());
   }
 }
