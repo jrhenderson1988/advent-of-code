@@ -71,15 +71,30 @@ public class Day16 extends Day {
       return tracePath(start, direction).size();
     }
 
-    public int maximumEnergisedCells() {
-      var width = cells.keySet().stream().map(Point::x).reduce(Long::max).orElseThrow();
-      var height = cells.keySet().stream().map(Point::y).reduce(Long::max).orElseThrow();
+    private long getWidth() {
+      return cells.keySet().stream().map(Point::x).reduce(Long::max).orElseThrow();
+    }
 
-      var top = LongStream.range(0, width).mapToObj(x -> totalEnergisedCells(Point.of(x, 0), Direction.SOUTH)).reduce(Integer::max).orElseThrow();
-      var left = LongStream.range(0, height).mapToObj(y -> totalEnergisedCells(Point.of(0, y), Direction.EAST)).reduce(Integer::max).orElseThrow();
-      var bottom = LongStream.range(0, width).mapToObj(x -> totalEnergisedCells(Point.of(x, height - 1), Direction.NORTH)).reduce(Integer::max).orElseThrow();
-      var right = LongStream.range(0, height).mapToObj(y -> totalEnergisedCells(Point.of(width - 1, y), Direction.WEST)).reduce(Integer::max).orElseThrow();
-      return List.of(top, left, bottom, right).stream().reduce(Integer::max).orElseThrow();
+    private long getHeight() {
+      return cells.keySet().stream().map(Point::y).reduce(Long::max).orElseThrow();
+    }
+
+    public int maximumEnergisedCells() {
+      var width = getWidth();
+      var height = getHeight();
+
+      return Stream.of(
+              LongStream.range(0, width).mapToObj(x -> State.of(Point.of(x, 0), Direction.SOUTH)),
+              LongStream.range(0, height).mapToObj(y -> State.of(Point.of(0, y), Direction.EAST)),
+              LongStream.range(0, width)
+                  .mapToObj(x -> State.of(Point.of(x, height - 1), Direction.NORTH)),
+              LongStream.range(0, height)
+                  .mapToObj(y -> State.of(Point.of(width - 1, y), Direction.WEST)))
+          .reduce(Stream::concat)
+          .orElseThrow()
+          .map(s -> totalEnergisedCells(s.position(), s.direction()))
+          .reduce(Integer::max)
+          .orElseThrow();
     }
 
     private Set<Point> tracePath(Point start, Direction initialDirection) {
@@ -98,40 +113,8 @@ public class Day16 extends Day {
               occupied.add(s.position());
               seen.add(s);
             });
-
-        //        print(occupied);
-        //        try {
-        //          Thread.sleep(1000);
-        //        } catch (InterruptedException e) {
-        //        }
       }
       return occupied;
-    }
-
-    private void print(Set<Point> taken) {
-      var width = cells.keySet().stream().map(Point::x).reduce(Long::max).orElseThrow();
-      var height = cells.keySet().stream().map(Point::y).reduce(Long::max).orElseThrow();
-
-      for (var y = 0; y < height; y++) {
-        StringBuilder line = new StringBuilder();
-        for (var x = 0; x < width; x++) {
-          var point = Point.of(x, y);
-          if (taken.contains(point)) {
-            line.append("#");
-          } else {
-            line.append(
-                switch (cells.get(point)) {
-                  case SPACE -> ".";
-                  case FORWARD_MIRROR -> "/";
-                  case BACKWARD_MIRROR -> "\\";
-                  case HORIZONTAL_SPLITTER -> "-";
-                  case VERTICAL_SPLITTER -> "|";
-                });
-          }
-        }
-        System.out.println(line);
-      }
-      System.out.println("\n");
     }
 
     private List<State> apply(State state) {
