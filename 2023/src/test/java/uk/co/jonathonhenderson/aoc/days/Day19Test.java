@@ -34,6 +34,7 @@ class Day19Test {
 
   @Test
   void part2() {
-    assertEquals(Optional.empty(), new Day19(INPUT).part2());
+    assertEquals(Optional.of("167409079868000"), new Day19(INPUT).part2());
   }
 }
+

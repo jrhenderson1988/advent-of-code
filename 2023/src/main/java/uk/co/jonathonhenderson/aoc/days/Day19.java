@@ -1,11 +1,13 @@
 package uk.co.jonathonhenderson.aoc.days;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import uk.co.jonathonhenderson.aoc.common.Lines;
+import uk.co.jonathonhenderson.aoc.common.Pair;
 
 public class Day19 extends Day {
 
@@ -22,12 +24,14 @@ public class Day19 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(workflows.totalDistinctCombinationsThatWouldBeAccepted());
   }
 
   private enum Op {
     GT,
-    LT;
+    LT,
+    GTE,
+    LTE;
 
     public static Op of(char c) {
       return switch (c) {
@@ -41,6 +45,16 @@ public class Day19 extends Day {
       return switch (this) {
         case GT -> a > b;
         case LT -> a < b;
+        default -> throw new IllegalArgumentException("Cannot apply");
+      };
+    }
+
+    public Op compliment() {
+      return switch (this) {
+        case GT -> LTE;
+        case LT -> GTE;
+        case GTE -> LT;
+        case LTE -> GT;
       };
     }
   }
@@ -101,6 +115,10 @@ public class Day19 extends Day {
           default -> throw new IllegalArgumentException("Unknown identifier");
         };
       }
+
+      public Operation compliment() {
+        return new Operation(identifier, op.compliment(), value, outcome);
+      }
     }
 
     record Accept() implements Rule {}
@@ -145,6 +163,34 @@ public class Day19 extends Day {
     }
   }
 
+  private record RangePart(
+      Pair<Long, Long> x, Pair<Long, Long> m, Pair<Long, Long> a, Pair<Long, Long> s) {
+    public static RangePart of(
+        Pair<Long, Long> x, Pair<Long, Long> m, Pair<Long, Long> a, Pair<Long, Long> s) {
+      return new RangePart(x, m, a, s);
+    }
+
+    public boolean isValid() {
+      return x.left() <= x.right()
+          && m.left() <= m.right()
+          && a.left() <= a.right()
+          && s.left() <= s.right();
+    }
+
+    public long value() {
+      return (x.right() - x.left() + 1)
+          * (m.right() - m.left() + 1)
+          * (a.right() - a.left() + 1)
+          * (s.right() - s.left() + 1);
+    }
+  }
+
+  private record State(String name, RangePart part) {
+    public static State of(String name, RangePart part) {
+      return new State(name, part);
+    }
+  }
+
   private record Workflows(Map<String, Workflow> workflows, List<Part> parts) {
 
     public static Workflows parse(String input) {
@@ -182,6 +228,76 @@ public class Day19 extends Day {
         }
         curr = ((Outcome.NextWorkflow) outcome).name();
       }
+    }
+
+    public long totalDistinctCombinationsThatWouldBeAccepted() {
+      var total = 0L;
+      var q = new ArrayDeque<State>();
+      q.add(
+          State.of(
+              "in",
+              RangePart.of(
+                  Pair.of(1L, 4000L), Pair.of(1L, 4000L), Pair.of(1L, 4000L), Pair.of(1L, 4000L))));
+      while (!q.isEmpty()) {
+        var state = q.removeLast();
+        var name = state.name();
+        var part = state.part();
+
+        if (!part.isValid()) {
+          continue;
+        }
+
+        if (name.equals("A")) {
+          total += part.value();
+        } else if (!name.equals("R")) {
+          var workflow = workflows.get(name);
+          for (var rule : workflow.rules()) {
+            if (rule instanceof Rule.Operation operation) {
+              var res =
+                  switch (operation.outcome()) {
+                    case Outcome.Accept accept -> "A";
+                    case Outcome.Reject reject -> "R";
+                    case Outcome.NextWorkflow nwf -> nwf.name();
+                  };
+
+              q.addLast(State.of(res, newRanges(operation, part)));
+              part = newRanges(operation.compliment(), part);
+            } else {
+              var res =
+                  switch (rule) {
+                    case Rule.Accept accept -> "A";
+                    case Rule.Reject reject -> "R";
+                    case Rule.NextWorkflow nwf -> nwf.name();
+                    default -> throw new IllegalArgumentException("...");
+                  };
+              q.addLast(State.of(res, part));
+              break;
+            }
+          }
+        }
+      }
+      return total;
+    }
+
+    private Pair<Long, Long> newRange(Op op, long n, Pair<Long, Long> range) {
+      return switch (op) {
+        case Op.GT -> Pair.of(Math.max(range.left(), n + 1), range.right());
+        case Op.LT -> Pair.of(range.left(), Math.min(range.right(), n - 1));
+        case Op.GTE -> Pair.of(Math.max(range.left(), n), range.right());
+        case Op.LTE -> Pair.of(range.left(), Math.min(range.right(), n));
+      };
+    }
+
+    private RangePart newRanges(Rule.Operation operation, RangePart p) {
+      var op = operation.op();
+      var value = operation.value();
+      return switch (operation.identifier()) {
+        case 'x' -> RangePart.of(newRange(op, value, p.x()), p.m(), p.a(), p.s());
+        case 'm' -> RangePart.of(p.x(), newRange(op, value, p.m()), p.a(), p.s());
+        case 'a' -> RangePart.of(p.x(), p.m(), newRange(op, value, p.a()), p.s());
+        case 's' -> RangePart.of(p.x(), p.m(), p.a(), newRange(op, value, p.s()));
+        default -> p;
+      };
     }
   }
 }
