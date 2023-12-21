@@ -100,18 +100,17 @@ public class Day21 extends Day {
     }
 
     private Set<Point> explore(Set<Point> from, int stepsRemaining) {
-      if (stepsRemaining == 0) {
-        return from;
+      var positions = new HashSet<>(from);
+      for (var i = 0; i < stepsRemaining; i++) {
+        var newPositions = new HashSet<Point>();
+        for (var pos : positions) {
+          var neighbours = possibleNeighboursOf(pos);
+          newPositions.addAll(neighbours);
+        }
+        positions = newPositions;
       }
 
-      var newPositions = new HashSet<Point>();
-      var neighbours = possibleNeighboursOf(from);
-      for (var neighbour : neighbours) {
-        var a = explore(Set.of(neighbour), stepsRemaining - 1);
-        newPositions.addAll(a);
-      }
-
-      return newPositions;
+      return positions;
     }
 
     private List<Point> possibleNeighboursOf(Point from) {
