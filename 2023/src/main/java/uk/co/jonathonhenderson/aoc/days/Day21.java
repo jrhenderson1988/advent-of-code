@@ -1,7 +1,6 @@
 package uk.co.jonathonhenderson.aoc.days;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,11 @@ public class Day21 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return part2(26501365);
+  }
+
+  public Optional<String> part2(int steps) {
+    return answer(grid.totalGardensPossibleWithInfiniteMapInSteps(steps));
   }
 
   private enum Cell {
@@ -73,30 +76,13 @@ public class Day21 extends Day {
       return new Grid(cells, start);
     }
 
-    public int totalGardensPossibleInSteps(int steps) {
-      var result = explore(Set.of(start), steps);
+    public long totalGardensPossibleWithInfiniteMapInSteps(int steps) {
+      // TODO
+      return 0;
+    }
 
-      //      var height =
-      //          cells.keySet().stream().map(pt -> (int)
-      // pt.y()).reduce(Integer::max).orElseThrow();
-      //      var width =
-      //          cells.keySet().stream().map(pt -> (int)
-      // pt.x()).reduce(Integer::max).orElseThrow();
-      //
-      //      for (var y = 0; y < height; y++) {
-      //        for (var x = 0; x < width; x++) {
-      //          var pt = Point.of(x, y);
-      //          if (result.contains(pt)) {
-      //            System.out.print("O");
-      //          } else if (cells.get(pt).equals(Cell.GARDEN)) {
-      //            System.out.print(".");
-      //          } else if (cells.get(pt).equals(Cell.ROCK)) {
-      //            System.out.print("#");
-      //          }
-      //        }
-      //        System.out.print("\n");
-      //      }
-      return result.size();
+    public int totalGardensPossibleInSteps(int steps) {
+      return explore(Set.of(start), steps).size();
     }
 
     private Set<Point> explore(Set<Point> from, int stepsRemaining) {
@@ -118,10 +104,6 @@ public class Day21 extends Day {
           .map(d -> d.delta().translate(from))
           .filter(p -> Cell.GARDEN.equals(cells.get(p)))
           .toList();
-    }
-
-    private List<Point> possibleNeighboursOf(Collection<Point> from) {
-      return from.stream().flatMap(pt -> possibleNeighboursOf(pt).stream()).toList();
     }
   }
 }
