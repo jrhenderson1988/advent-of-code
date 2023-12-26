@@ -23,5 +23,7 @@ class Day22Test {
   }
 
   @Test
-  void part2() {}
+  void part2() {
+    assertEquals(Optional.of("7"), new Day22(INPUT).part2());
+  }
 }

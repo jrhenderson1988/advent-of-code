@@ -1,5 +1,6 @@
 package uk.co.jonathonhenderson.aoc.days;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -26,7 +27,7 @@ public class Day22 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(bricks.sumOfBricksThatWouldFall());
   }
 
   private record Coordinate(int x, int y, int z) {
@@ -69,18 +70,6 @@ public class Day22 extends Day {
       }
 
       return Brick.of(a, b);
-    }
-
-    public int xSize() {
-      return a.x() > b.x() ? a.x() - b.x() : b.x() - a.x();
-    }
-
-    public int ySize() {
-      return a.y() > b.y() ? a.y() - b.y() : b.y() - a.y();
-    }
-
-    public int zSize() {
-      return a.z() > b.z() ? a.z() - b.z() : b.z() - a.z();
     }
 
     public int minZ() {
@@ -130,7 +119,7 @@ public class Day22 extends Day {
     }
 
     public int totalDisintegratableBricks() {
-      return settle().findDisintegratableBricks().size();
+      return settle().findRemovableBricks().size();
     }
 
     @Override
@@ -142,9 +131,11 @@ public class Day22 extends Day {
       var sorted = bricks.stream().sorted(Comparator.comparingInt(brick -> brick.a().z())).toList();
 
       var supports = new ArrayList<List<Integer>>();
+      var supportedBy = new ArrayList<List<Integer>>();
       var newBricks = new ArrayList<Brick>();
       for (var i = 0; i < sorted.size(); i++) {
         var newBrick = sorted.get(i);
+        var thisBrickSupportedBy = new ArrayList<Integer>();
         while (true) {
           if (newBrick.minZ() == 1) {
             break;
@@ -152,51 +143,57 @@ public class Day22 extends Day {
 
           var moved = newBrick.translateZ(-1);
 
-          var supportedBy =
+          var overlaps =
               IntStream.range(0, newBricks.size())
                   .filter(n -> newBricks.get(n).overlapsWith(moved))
                   .boxed()
                   .toList();
-          if (!supportedBy.isEmpty()) {
-            for (var s : supportedBy) {
-              supports.get(s).add(i);
+          if (!overlaps.isEmpty()) {
+            for (var overlap : overlaps) {
+              supports.get(overlap).add(i);
+              thisBrickSupportedBy.add(overlap);
             }
             break;
           }
 
-          // assign next position
           newBrick = moved;
         }
 
         newBricks.add(newBrick);
         supports.add(new ArrayList<>());
+        supportedBy.add(thisBrickSupportedBy);
       }
 
-      return new SettledBricks(new Bricks(newBricks), supports);
+      return new SettledBricks(new Bricks(newBricks), supports, supportedBy);
+    }
+
+    public long sumOfBricksThatWouldFall() {
+      return settle().sumOfBricksThatWouldFall();
     }
   }
 
-  private record SettledBricks(Bricks bricks, List<List<Integer>> supports) {
-    public List<Brick> findDisintegratableBricks() {
-      var disintegratableBricks = new ArrayList<Brick>();
-      for (var brickIdx = 0; brickIdx < supports.size(); brickIdx++) {
-        var brick = bricks.bricks().get(brickIdx);
-        var supported = supports.get(brickIdx);
+  private record SettledBricks(
+      Bricks bricks, List<List<Integer>> supports, List<List<Integer>> supportedBy) {
+    public List<Brick> findRemovableBricks() {
+      var removable = new ArrayList<Brick>();
+      for (var i = 0; i < supports.size(); i++) {
+        var brick = bricks.bricks().get(i);
+        var supported = supports.get(i);
 
-        var canBeDisintegrated = true;
+        var canBeRemoved = true;
         for (var s : supported) {
           var supports = findAllSupportsFor(s);
           if (supports.size() == 1) {
-            canBeDisintegrated = false;
+            canBeRemoved = false;
             break;
           }
         }
 
-        if (canBeDisintegrated) {
-          disintegratableBricks.add(brick);
+        if (canBeRemoved) {
+          removable.add(brick);
         }
       }
-      return disintegratableBricks;
+      return removable;
     }
 
     private List<Integer> findAllSupportsFor(int brickIndex) {
@@ -204,6 +201,40 @@ public class Day22 extends Day {
           .filter(i -> supports.get(i).contains(brickIndex))
           .boxed()
           .toList();
+    }
+
+    public long sumOfBricksThatWouldFall() {
+      return IntStream.range(0, bricks.bricks().size())
+          .mapToObj(this::totalThatWouldFallIfBrickWasRemoved)
+          .reduce(Long::sum)
+          .orElseThrow();
+    }
+
+    private long totalThatWouldFallIfBrickWasRemoved(int brickIndex) {
+      var queue = new ArrayDeque<Integer>();
+      var seen = new HashSet<Integer>();
+      var moving = new HashSet<Integer>();
+      queue.add(brickIndex);
+      moving.add(brickIndex);
+
+      while (!queue.isEmpty()) {
+        var idx = queue.poll();
+        if (seen.contains(idx)) {
+          continue;
+        }
+        seen.add(idx);
+
+        for (var supportedBrickIdx : supports.get(idx)) {
+          var sb = supportedBy.get(supportedBrickIdx);
+          if (moving.containsAll(sb)) {
+            queue.add(supportedBrickIdx);
+            moving.add(supportedBrickIdx);
+          }
+        }
+      }
+
+      // -1 because the removed brick should not count towards total
+      return moving.size() - 1;
     }
   }
 }
