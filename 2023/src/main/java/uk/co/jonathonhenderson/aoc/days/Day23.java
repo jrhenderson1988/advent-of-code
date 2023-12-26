@@ -102,12 +102,16 @@ public class Day23 extends Day {
       var max = 0L;
       for (var neighbour : neighboursOf(start)) {
         if (!discovered.contains(neighbour)) {
-          var newDiscovered = new HashSet<>(discovered);
-          newDiscovered.add(neighbour);
-          max = Math.max(max, dfs(neighbour, end, newDiscovered, length + 1));
+          max = Math.max(max, dfs(neighbour, end, discover(discovered, neighbour), length + 1));
         }
       }
       return max;
+    }
+
+    private Set<Point> discover(Set<Point> discovered, Point point) {
+      var newDiscovered = new HashSet<>(discovered);
+      newDiscovered.add(point);
+      return newDiscovered;
     }
 
     private Point findStart() {
