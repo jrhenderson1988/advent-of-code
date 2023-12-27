@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import uk.co.jonathonhenderson.aoc.common.Direction;
 import uk.co.jonathonhenderson.aoc.common.Point;
@@ -23,7 +24,7 @@ public class Day23 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    return answer(grid.lengthOfLongestHikeIgnoringHills());
   }
 
   private enum Cell {
@@ -59,7 +60,14 @@ public class Day23 extends Day {
       var start = findStart();
       var end = findEnd();
 
-      return dfs(start, end);
+      return dfs(start, end, this::neighboursOf);
+    }
+
+    public long lengthOfLongestHikeIgnoringHills() {
+      var start = findStart();
+      var end = findEnd();
+
+      return dfs(start, end, this::neighboursOfIgnoringHills);
     }
 
     private List<Point> neighboursOf(Point point) {
@@ -73,6 +81,17 @@ public class Day23 extends Day {
         case SLOPE_RIGHT -> List.of(Direction.EAST.delta().translate(point));
         case SLOPE_DOWN -> List.of(Direction.SOUTH.delta().translate(point));
         case SLOPE_UP -> List.of(Direction.NORTH.delta().translate(point));
+      };
+    }
+
+    public List<Point> neighboursOfIgnoringHills(Point point) {
+      return switch (cellAt(point)) {
+        case OPEN, SLOPE_LEFT, SLOPE_RIGHT, SLOPE_DOWN, SLOPE_UP -> Arrays.stream(
+                Direction.values())
+            .map(d -> d.delta().translate(point))
+            .filter(p -> !cellAt(p).equals(Cell.WALL))
+            .toList();
+        case WALL -> throw new IllegalStateException("Should not be reachable");
       };
     }
 
@@ -90,19 +109,27 @@ public class Day23 extends Day {
       return line.get(x);
     }
 
-    private long dfs(Point start, Point end) {
-      return dfs(start, end, Set.of(), 0);
+    private long dfs(Point start, Point end, Function<Point, List<Point>> neighbourFn) {
+      return dfs(start, end, Set.of(), 0, neighbourFn);
     }
 
-    private long dfs(Point start, Point end, Set<Point> discovered, long length) {
+    private long dfs(
+        Point start,
+        Point end,
+        Set<Point> discovered,
+        long length,
+        Function<Point, List<Point>> neighbourFn) {
       if (start.equals(end)) {
         return length;
       }
 
       var max = 0L;
-      for (var neighbour : neighboursOf(start)) {
+      for (var neighbour : neighbourFn.apply(start)) {
         if (!discovered.contains(neighbour)) {
-          max = Math.max(max, dfs(neighbour, end, discover(discovered, neighbour), length + 1));
+          max =
+              Math.max(
+                  max,
+                  dfs(neighbour, end, discover(discovered, neighbour), length + 1, neighbourFn));
         }
       }
       return max;
