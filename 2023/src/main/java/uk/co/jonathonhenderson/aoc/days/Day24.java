@@ -82,7 +82,7 @@ public class Day24 extends Day {
       return new Hailstones(input.trim().lines().map(Hailstone::parse).toList());
     }
 
-    public int totalIntersectionsInTargetArea(BigDecimal min, BigDecimal max) {
+    public long totalIntersectionsInTargetArea(BigDecimal min, BigDecimal max) {
       var total = 0;
       for (var i = 0; i < hailstones.size(); i++) {
         var a = hailstones.get(i);
@@ -111,24 +111,24 @@ public class Day24 extends Day {
         return false;
       }
 
-      return !intersectionOccursInPast(a, intersectionX, intersectionY)
-          && !intersectionOccursInPast(b, intersectionX, intersectionY);
+      return intersectionOccursInFuture(a, intersectionX, intersectionY)
+          && intersectionOccursInFuture(b, intersectionX, intersectionY);
     }
 
-    private boolean intersectionOccursInPast(Hailstone a, BigDecimal x, BigDecimal y) {
-      if (isPositive(a.velocity().x()) && lt(x, a.position().x())) {
-        return true;
-      } else if (isNegative(a.velocity().x()) && gt(x, a.position().x())) {
-        return true;
+    private boolean intersectionOccursInFuture(Hailstone hs, BigDecimal x, BigDecimal y) {
+      if (isPositive(hs.velocity().x()) && lt(x, hs.position().x())) {
+        return false;
+      } else if (isNegative(hs.velocity().x()) && gt(x, hs.position().x())) {
+        return false;
       }
 
-      if (isPositive(a.velocity().y()) && lt(y, a.position().y())) {
-        return true;
-      } else if (isNegative(a.velocity().y()) && gt(y, a.position().y())) {
-        return true;
+      if (isPositive(hs.velocity().y()) && lt(y, hs.position().y())) {
+        return false;
+      } else if (isNegative(hs.velocity().y()) && gt(y, hs.position().y())) {
+        return false;
       }
 
-      return false;
+      return true;
     }
 
     private boolean isNegative(BigDecimal num) {
