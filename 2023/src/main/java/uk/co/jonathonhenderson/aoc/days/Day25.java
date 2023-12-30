@@ -1,14 +1,18 @@
 package uk.co.jonathonhenderson.aoc.days;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import uk.co.jonathonhenderson.aoc.common.Pair;
+import uk.co.jonathonhenderson.aoc.common.PathFinding;
 
 public class Day25 extends Day {
   private final Wires wires;
@@ -19,9 +23,6 @@ public class Day25 extends Day {
 
   @Override
   public Optional<String> part1() {
-    //    var result = wires.splitsIntoTwoGroups(Pair.of("hfx", "pzl"), Pair.of("bvb", "cmg"),
-    // Pair.of("nvd", "jqt"));
-    //    System.out.println(result);
     return answer(wires.findProductOfSizeOfHalvesWhenSplitIntoTwo());
   }
 
@@ -72,40 +73,53 @@ public class Day25 extends Day {
     }
 
     public long findProductOfSizeOfHalvesWhenSplitIntoTwo() {
-      var possibleCuts = findPossibleCuts();
-      System.out.println("Possible cuts: " + possibleCuts.size());
-
-      for (var a : possibleCuts) {
-        System.out.println("first cut: " + a);
-        for (var b : possibleCuts) {
-          for (var c : possibleCuts) {
-            if (a.equals(b) || a.equals(c) || b.equals(c)) {
-              continue;
-            }
-
-            var secondGroup = findSecondGroup(a, b, c);
-            if (secondGroup.isPresent()) {
-              return (long) (nodes.size() - secondGroup.get().size()) * secondGroup.get().size();
-            }
-          }
-        }
-      }
-
-      throw new IllegalStateException("Could not find cuts");
+      var cuts = findCutsUsingPathfindingHeuristic();
+      var secondGroup = findSecondGroup(cuts.get(0), cuts.get(1), cuts.get(2)).orElseThrow();
+      return (long) (nodes.size() - secondGroup.size()) * secondGroup.size();
     }
 
-    private Set<Pair<String, String>> findPossibleCuts() {
-      var possibleCuts = new HashSet<Pair<String, String>>();
-      for (var connection : connections.entrySet()) {
-        var from = connection.getKey();
-        for (var to : connection.getValue()) {
-          if (!possibleCuts.contains(Pair.of(from, to))
-              && !possibleCuts.contains(Pair.of(to, from))) {
-            possibleCuts.add(Pair.of(from, to));
+    private List<Pair<String, String>> findCutsUsingPathfindingHeuristic() {
+      var commonlyTraversedEdges = new HashMap<Pair<String, String>, Integer>();
+      for (var a : nodes) {
+        for (var b : nodes) {
+          if (a.equals(b)) {
+            continue;
+          }
+
+          var path = findPathBetween(a, b);
+          for (var wire : path) {
+            var key = wire;
+            var opposite = Pair.of(wire.second(), wire.first());
+            if (!commonlyTraversedEdges.containsKey(wire)
+                && commonlyTraversedEdges.containsKey(opposite)) {
+              key = opposite;
+            }
+
+            var n = commonlyTraversedEdges.getOrDefault(key, 0);
+            commonlyTraversedEdges.put(key, n + 1);
           }
         }
       }
-      return possibleCuts;
+
+      return commonlyTraversedEdges.entrySet().stream()
+          .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+          .limit(10)
+          .map(Entry::getKey)
+          .toList();
+    }
+
+    private List<Pair<String, String>> findPathBetween(String a, String b) {
+      var path = PathFinding.bfs(a, b, connections::get);
+      if (path == null) {
+        throw new IllegalStateException(
+            "Did not expect to be unable to trace a path between " + a + "and " + b);
+      }
+
+      var wires = new ArrayList<Pair<String, String>>();
+      for (var i = 0; i < path.size() - 1; i++) {
+        wires.add(Pair.of(path.get(i), path.get(i + 1)));
+      }
+      return wires;
     }
 
     private Optional<Set<String>> findSecondGroup(
