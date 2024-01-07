@@ -174,10 +174,10 @@ public class Day24 extends Day {
       var first =
           elim(
                   mat(
-                      hs -> hs.position().x(),
-                      hs -> hs.position().y(),
-                      hs -> hs.velocity().x(),
-                      hs -> hs.velocity().y()))
+                      hs -> hs.position().x().doubleValue(),
+                      hs -> hs.position().y().doubleValue(),
+                      hs -> hs.velocity().x().doubleValue(),
+                      hs -> hs.velocity().y().doubleValue()))
               .stream()
               .map(List::getLast)
               .toList();
@@ -187,66 +187,62 @@ public class Day24 extends Day {
       var second =
           elim(
                   mat(
-                      hs -> hs.position().z(),
-                      hs -> hs.position().y(),
-                      hs -> hs.velocity().z(),
-                      hs -> hs.velocity().y()))
+                      hs -> hs.position().z().doubleValue(),
+                      hs -> hs.position().y().doubleValue(),
+                      hs -> hs.velocity().z().doubleValue(),
+                      hs -> hs.velocity().y().doubleValue()))
               .stream()
               .map(List::getLast)
               .toList();
       var z = second.getFirst();
 
-      var result = x.add(y).add(z);
+      var result = x + y + z;
 
-      return result.longValue();
+      return (long) result;
     }
 
-    private List<List<BigDecimal>> mat(
-        Function<Hailstone, BigDecimal> x,
-        Function<Hailstone, BigDecimal> y,
-        Function<Hailstone, BigDecimal> dx,
-        Function<Hailstone, BigDecimal> dy) {
+    private List<List<Double>> mat(
+        Function<Hailstone, Double> x,
+        Function<Hailstone, Double> y,
+        Function<Hailstone, Double> dx,
+        Function<Hailstone, Double> dy) {
       var m =
           hailstones.stream()
               .map(
                   s ->
                       List.of(
-                          dy.apply(s).negate(),
+                          -dy.apply(s),
                           dx.apply(s),
                           y.apply(s),
-                          x.apply(s).negate(),
-                          y.apply(s)
-                              .multiply(dx.apply(s))
-                              .subtract(x.apply(s).multiply(dy.apply(s)))))
+                          -x.apply(s),
+                          y.apply(s) * dx.apply(s) - x.apply(s) * dy.apply(s)))
               .toList();
       var last = m.getLast();
       return m.stream()
           .limit(4)
           .map(
               r ->
-                  IntStream.range(0, r.size())
-                      .mapToObj(idx -> r.get(idx).subtract(last.get(idx)))
-                      .toList())
+                  IntStream.range(0, r.size()).mapToObj(idx -> r.get(idx) - last.get(idx)).toList())
           .toList();
     }
 
-    private List<List<BigDecimal>> elim(List<List<BigDecimal>> m) {
+    private List<List<Double>> elim(List<List<Double>> m) {
       m = new ArrayList<>(m.stream().toList());
 
       for (var i = 0; i < m.size(); i++) {
         var t = m.get(i).get(i);
-        var newMi = new ArrayList<BigDecimal>();
+        var newMi = new ArrayList<Double>();
         for (var x : m.get(i)) {
-          newMi.add(x.divide(t, SCALE, ROUNDING_MODE));
+          newMi.add(x / t);
         }
         m.set(i, newMi);
         for (var j = i + 1; j < m.size(); j++) {
           t = m.get(j).get(i);
           var mj = m.get(j);
-          var newMj = new ArrayList<BigDecimal>();
+          var newMj = new ArrayList<Double>();
           for (var k = 0; k < mj.size(); k++) {
             var x = mj.get(k);
-            newMj.add(x.subtract(t.multiply(m.get(i).get(k))));
+            newMj.add(x - (t * m.get(i).get(k)));
           }
           m.set(j, newMj);
         }
@@ -256,10 +252,10 @@ public class Day24 extends Day {
         for (var j = 0; j < i; j++) {
           var t = m.get(j).get(i);
           var mj = m.get(j);
-          var newMj = new ArrayList<BigDecimal>();
+          var newMj = new ArrayList<Double>();
           for (var k = 0; k < mj.size(); k++) {
             var x = mj.get(k);
-            newMj.add(x.subtract(t.multiply(m.get(i).get(k))));
+            newMj.add(x - (t * m.get(i).get(k)));
           }
           m.set(j, newMj);
         }
