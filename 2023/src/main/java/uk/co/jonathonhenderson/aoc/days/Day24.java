@@ -2,12 +2,15 @@ package uk.co.jonathonhenderson.aoc.days;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 
 public class Day24 extends Day {
-  private static final int SCALE = 10;
+  private static final int SCALE = 200;
   private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
 
   private final Hailstones hailstones;
@@ -27,7 +30,9 @@ public class Day24 extends Day {
 
   @Override
   public Optional<String> part2() {
-    return answer();
+    // Based on solution described and demonstrated in:
+    // https://www.reddit.com/r/adventofcode/comments/18q40he/2023_day_24_part_2_a_straightforward_nonsolver/
+    return answer(hailstones.sumOfCoordinatesOfRockPosition());
   }
 
   private record Coordinate(BigDecimal x, BigDecimal y, BigDecimal z) {
@@ -163,6 +168,104 @@ public class Day24 extends Day {
     private boolean intersectionOccursWithinBoundary(
         BigDecimal x, BigDecimal y, BigDecimal min, BigDecimal max) {
       return gte(x, min) && lte(x, max) && gte(y, min) && lte(y, max);
+    }
+
+    public Long sumOfCoordinatesOfRockPosition() {
+      var first =
+          elim(
+                  mat(
+                      hs -> hs.position().x(),
+                      hs -> hs.position().y(),
+                      hs -> hs.velocity().x(),
+                      hs -> hs.velocity().y()))
+              .stream()
+              .map(List::getLast)
+              .toList();
+      var x = first.get(0);
+      var y = first.get(1);
+
+      var second =
+          elim(
+                  mat(
+                      hs -> hs.position().z(),
+                      hs -> hs.position().y(),
+                      hs -> hs.velocity().z(),
+                      hs -> hs.velocity().y()))
+              .stream()
+              .map(List::getLast)
+              .toList();
+      var z = second.getFirst();
+
+      var result = x.add(y).add(z);
+
+      return result.longValue();
+    }
+
+    private List<List<BigDecimal>> mat(
+        Function<Hailstone, BigDecimal> x,
+        Function<Hailstone, BigDecimal> y,
+        Function<Hailstone, BigDecimal> dx,
+        Function<Hailstone, BigDecimal> dy) {
+      var m =
+          hailstones.stream()
+              .map(
+                  s ->
+                      List.of(
+                          dy.apply(s).negate(),
+                          dx.apply(s),
+                          y.apply(s),
+                          x.apply(s).negate(),
+                          y.apply(s)
+                              .multiply(dx.apply(s))
+                              .subtract(x.apply(s).multiply(dy.apply(s)))))
+              .toList();
+      var last = m.getLast();
+      return m.stream()
+          .limit(4)
+          .map(
+              r ->
+                  IntStream.range(0, r.size())
+                      .mapToObj(idx -> r.get(idx).subtract(last.get(idx)))
+                      .toList())
+          .toList();
+    }
+
+    private List<List<BigDecimal>> elim(List<List<BigDecimal>> m) {
+      m = new ArrayList<>(m.stream().toList());
+
+      for (var i = 0; i < m.size(); i++) {
+        var t = m.get(i).get(i);
+        var newMi = new ArrayList<BigDecimal>();
+        for (var x : m.get(i)) {
+          newMi.add(x.divide(t, SCALE, ROUNDING_MODE));
+        }
+        m.set(i, newMi);
+        for (var j = i + 1; j < m.size(); j++) {
+          t = m.get(j).get(i);
+          var mj = m.get(j);
+          var newMj = new ArrayList<BigDecimal>();
+          for (var k = 0; k < mj.size(); k++) {
+            var x = mj.get(k);
+            newMj.add(x.subtract(t.multiply(m.get(i).get(k))));
+          }
+          m.set(j, newMj);
+        }
+      }
+
+      for (var i = m.size() - 1; i >= 0; i--) {
+        for (var j = 0; j < i; j++) {
+          var t = m.get(j).get(i);
+          var mj = m.get(j);
+          var newMj = new ArrayList<BigDecimal>();
+          for (var k = 0; k < mj.size(); k++) {
+            var x = mj.get(k);
+            newMj.add(x.subtract(t.multiply(m.get(i).get(k))));
+          }
+          m.set(j, newMj);
+        }
+      }
+
+      return m;
     }
   }
 
