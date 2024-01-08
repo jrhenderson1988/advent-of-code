@@ -2,7 +2,6 @@ package uk.co.jonathonhenderson.aoc.days;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +17,7 @@ class Day24Test {
 
   @Test
   void part1() {
-    assertEquals(
-        Optional.of("2"), new Day24(INPUT).part1(BigDecimal.valueOf(7), BigDecimal.valueOf(27)));
+    assertEquals(Optional.of("2"), new Day24(INPUT).part1(7d, 27d));
   }
 
   @Test
