@@ -9,16 +9,23 @@ def class_exists?(class_name)
   end
 end
 
+def read_input(paths)
+  File.read(paths.filter { |path| File.file?(path) && File.readable?(path) }.first)
+end
+
 Dir[File.dirname(__FILE__) + "/data/*.out"].each do |output_path|
   name = output_path[output_path.rindex("/") + 1..output_path.rindex(".out") - 1]
   day, part = name.match(/d(\d\d)p([12]).*/).captures
-  input_path = output_path[0..output_path.rindex("/")] + "d#{day}.in"
+  input_paths = [
+    output_path[0..output_path.rindex("/")] + "d#{day}p#{part}.in",
+    output_path[0..output_path.rindex("/")] + "d#{day}.in"
+  ]
   class_name = "Aoc::Day#{day}"
   method_name = "part#{part}"
 
   describe "#{name} (#{day} / #{part})" do
     it "#{class_name}##{method_name}" do
-      input = File.read(input_path)
+      input = read_input(input_paths)
       expected = File.read(output_path)
 
       clazz = Object.const_get(class_name)
