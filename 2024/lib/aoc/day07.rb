@@ -2,16 +2,18 @@ module Aoc
   class Day07 < Day
     ADD = '+'
     MUL = '*'
-    OPERATORS = [ADD, MUL]
+    CONCAT = '|'
 
     def part1
-      equations.filter { |equation| satisfiable?(equation) }
+      equations.filter { |equation| satisfiable?(equation, [ADD, MUL]) }
                .map { |equation| test_value(equation) }
                .sum
     end
 
     def part2
-      "TODO"
+      equations.filter { |equation| satisfiable?(equation, [ADD, MUL, CONCAT]) }
+               .map { |equation| test_value(equation) }
+               .sum
     end
 
     def equations
@@ -26,12 +28,12 @@ module Aoc
       [answer, numbers]
     end
 
-    def satisfiable?(equation)
+    def satisfiable?(equation, operators)
       test_value = test_value(equation)
       operands = operands(equation)
-      operator_combinations = generate_operator_combinations(operands.length - 1)
+      operator_combinations = generate_operator_combinations(operands.length - 1, operators)
 
-      operator_combinations.any? { |operators| calculate_value(operands, operators) == test_value }
+      operator_combinations.any? { |ops| calculate_value(operands, ops) == test_value }
     end
 
     def test_value(equation)
@@ -50,23 +52,31 @@ module Aoc
         total
       else
         raise ArgumentError if numbers.length != operations.length
-        op = operations[0]
-        num = numbers[0]
-        case op
-        when ADD
-          calculate_value(numbers[1..], operations[1..], total + num)
-        when MUL
-          calculate_value(numbers[1..], operations[1..], total * num)
-        else
-          raise ArgumentError
-        end
+        calculate_value(numbers[1..], operations[1..], apply_operation(total, numbers[0], operations[0]))
       end
     end
 
-    def generate_operator_combinations(size)
-      max = (0..size - 1).map { |_| "1" }.to_a.join("").to_i(2)
-      (0..max).map { |i| i.to_s(2).rjust(size, "0") }
-              .map { |n| n.chars.map { |c| OPERATORS[c.to_i] } }
+    def generate_operator_combinations(size, operators)
+      max = (0..size - 1).map { |_| operators.size - 1 }
+                         .to_a
+                         .join("")
+                         .to_i(operators.length)
+
+      (0..max).map { |i| i.to_s(operators.length).rjust(size, "0") }
+              .map { |n| n.chars.map { |c| operators[c.to_i] } }
+    end
+
+    def apply_operation(a, b, operator)
+      case operator
+      when ADD
+        a + b
+      when MUL
+        a * b
+      when CONCAT
+        "#{a}#{b}".to_i
+      else
+        raise ArgumentError
+      end
     end
   end
 end
