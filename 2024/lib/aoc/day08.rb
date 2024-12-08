@@ -3,13 +3,11 @@ require 'set'
 module Aoc
   class Day08 < Day
     def part1
-      find_unique_antinode_locations(antenna_locations)
-        .filter { |location| in_bounds?(location) }
-        .length
+      find_unique_antinode_locations(antenna_locations).length
     end
 
     def part2
-      "TODO"
+      find_resonant_antinode_locations(antenna_locations).length
     end
 
     def grid
@@ -51,31 +49,81 @@ module Aoc
       unique_locations = Set[]
 
       antenna_locations.each do |_, locations|
-        all_pairs(locations).map { |pair| find_antinode_positions(pair[0], pair[1]) }
-                            .each do |antinode_positions|
-          unique_locations.add(antinode_positions[0])
-          unique_locations.add(antinode_positions[1])
-        end
+        pairs(locations).map { |pair| find_both_antinode_positions_for_pair(pair) }
+                        .each { |positions| positions.each { |pos| unique_locations.add(pos) } }
       end
 
       unique_locations
     end
 
-    def all_pairs(locations)
+    def pairs(locations)
       (0..locations.length - 1).flat_map do |first|
-        (first + 1..locations.length - 1)
-          .map { |second| [locations[first], locations[second]] }
+        (first + 1..locations.length - 1).map { |second| [locations[first], locations[second]] }
       end
     end
 
-    def find_antinode_positions(first, second)
+    def find_both_antinode_positions_for_pair(pair)
+      first, second = pair
       diff_x = second[0] - first[0]
       diff_y = second[1] - first[1]
 
-      first_antinode = [first[0] - diff_x, first[1] - diff_y]
-      second_antinode = [second[0] + diff_x, second[1] + diff_y]
+      positions = []
 
-      [first_antinode, second_antinode]
+      first_antinode = [first[0] - diff_x, first[1] - diff_y]
+      if in_bounds?(first_antinode)
+        positions = positions + [first_antinode]
+      end
+
+      second_antinode = [second[0] + diff_x, second[1] + diff_y]
+      if in_bounds?(second_antinode)
+        positions = positions + [second_antinode]
+      end
+
+      positions
+    end
+
+    def find_resonant_antinode_locations(antenna_locations)
+      unique_locations = Set[]
+
+      antenna_locations.each do |_, locations|
+        pairs(locations).map { |pair| find_resonant_antinode_positions_for_pair(pair) }
+                        .each { |positions| positions.each { |pos| unique_locations.add(pos) } }
+
+      end
+
+      unique_locations
+    end
+
+    def find_resonant_antinode_positions_for_pair(pair)
+      first, second = pair
+      diff_x = second[0] - first[0]
+      diff_y = second[1] - first[1]
+
+      positions = [first,second]
+
+      curr = first
+      while true
+        next_antinode = [curr[0] - diff_x, curr[1] - diff_y]
+        if in_bounds?(next_antinode)
+          positions = positions + [next_antinode]
+          curr = next_antinode
+        else
+          break
+        end
+      end
+
+      curr = second
+      while true
+        next_antinode = [curr[0] + diff_x, curr[1] + diff_y]
+        if in_bounds?(next_antinode)
+          positions = positions + [next_antinode]
+          curr = next_antinode
+        else
+          break
+        end
+      end
+
+      positions
     end
 
     def in_bounds?(coord)
