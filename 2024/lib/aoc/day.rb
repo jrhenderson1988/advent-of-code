@@ -7,5 +7,9 @@ module Aoc
     def lines
       @lines ||= @content.strip.lines.map { |line| line.strip }
     end
+
+    def content
+      @content
+    end
   end
 end
