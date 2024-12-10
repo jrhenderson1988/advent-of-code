@@ -7,7 +7,7 @@ module Aoc
     end
 
     def part2
-      "TODO"
+      starting_points.map { |starting_point| total_distinct_hiking_trails_from(starting_point) }.sum
     end
 
     def grid
@@ -61,27 +61,25 @@ module Aoc
         reachable_peaks.add(point)
         reachable_peaks
       else
-        for neighbour in valid_neighbours_of(point)
-          foo = search_for_reachable_peaks(neighbour, path, reachable_peaks)
-          reachable_peaks = reachable_peaks.union(foo)
-        end
+        valid_neighbours_of(point).each { |neighbour|
+          peaks = search_for_reachable_peaks(neighbour, path, reachable_peaks)
+          reachable_peaks = reachable_peaks.union(peaks)
+        }
 
         reachable_peaks
       end
     end
 
-    def find_all_paths_to_peaks(v, discovered = Set[], path = [])
-      discovered.add(v)
-      path = path + [v]
-
-      if value_at(v) == 9
-        return path
-      end
-
-      for w in valid_neighbours_of(v)
-        if !discovered.member?(w)
-          find_all_paths_to_peaks(w, discovered, path)
+    def total_distinct_hiking_trails_from(point, path = [])
+      path = path + [point]
+      if value_at(point) == 9
+        1
+      else
+        score = 0
+        for neighbour in valid_neighbours_of(point)
+          score += total_distinct_hiking_trails_from(neighbour, path)
         end
+        score
       end
     end
   end
