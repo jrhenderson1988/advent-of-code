@@ -1,7 +1,7 @@
 module Aoc
   class Day
     def initialize(content)
-      @content = content
+      @content = content.strip
     end
 
     def lines
