@@ -15,9 +15,11 @@ end
 
 Dir[File.dirname(__FILE__) + "/data/*.out"].each do |output_path|
   name = output_path[output_path.rindex("/") + 1..output_path.rindex(".out") - 1]
-  day, part = name.match(/d(\d\d)p([12]).*/).captures
+  day, part, sub_test = name.match(/d(\d\d)p([12])([a-z]?)/).captures
   input_paths = [
+    output_path[0..output_path.rindex("/")] + "d#{day}p#{part}#{sub_test}.in",
     output_path[0..output_path.rindex("/")] + "d#{day}p#{part}.in",
+    output_path[0..output_path.rindex("/")] + "d#{day}#{sub_test}.in",
     output_path[0..output_path.rindex("/")] + "d#{day}.in"
   ]
   class_name = "Aoc::Day#{day}"

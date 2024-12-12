@@ -141,6 +141,5 @@ module Aoc
     def area(region)
       region.length
     end
-
   end
 end
