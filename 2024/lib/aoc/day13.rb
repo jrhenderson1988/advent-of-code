@@ -59,40 +59,26 @@ module Aoc
     end
 
     def fewest_tokens_to_win_prize_smart(rule)
-      # fewest_tokens_to_win_prize_naive(rule)
-
-      a, b, prize = rule
-      a_x, a_y = a
-      b_x, b_y = b
+      button_a, button_b, prize = rule
+      ax, ay = button_a
+      bx, by = button_b
       prize_x, prize_y = prize
 
-      max_b_presses = [(prize_x / b_x), (prize_y / b_y)].min
-      # max_a_presses = [(prize_x / a_x), (prize_y / a_y)].min
-      max_a_presses = MAX_ATTEMPTS_PER_BUTTON # set an arbitrary upper limit before we decide it's not possible
-      min_b_presses = [max_b_presses - MAX_ATTEMPTS_PER_BUTTON, 0].max
-      for button_b_presses in (max_b_presses).downto(min_b_presses)
-        for button_a_presses in (0..max_a_presses)
-          actual_x = (button_a_presses * a_x) + (button_b_presses * b_x)
-          actual_y = (button_a_presses * a_y) + (button_b_presses * b_y)
+      # We have two simultaneous equations (where ax, bx, ay, by are all known):
+      #
+      # (ax * a) + (bx * b) = px     e.g. (94 * a) + (22 * b) = 8400
+      # (ay * a) + (by * b) = py          (34 * a) + (22 * b) = 5400
+      #
+      # Using Cramer's rule to solve (https://www.youtube.com/watch?v=LprQ_Id-8hE)
+      #
+      a = (prize_x.to_f * by.to_f - prize_y.to_f * bx.to_f) / (ax.to_f * by.to_f - ay.to_f * bx.to_f)
+      b = (prize_y.to_f * ax.to_f - prize_x.to_f * ay.to_f) / (ax.to_f * by.to_f - ay.to_f * bx.to_f)
 
-          if matches([actual_x, actual_y], prize)
-            return cost_of_a_tokens(button_a_presses) + cost_of_b_tokens(button_b_presses)
-          end
-
-          break if exceeds([actual_x, actual_y], prize)
-        end
+      if a.to_i == a && b.to_i == b
+        ((a * 3) + b).to_i
+      else
+        nil
       end
-      # puts("#{rule.inspect} -> #{max_b_presses}")
-
-      # SMARTER_WAY
-      # a costs 3 tokens
-      # b costs 1 token
-      # prioritise pressing b (cost 1 token)
-      # work out the most amount of times we can press B and either hit, or stay below the totals
-      # iterate down, removing a B button press and continue pressing A until we hit the totals or we exceed in any way
-      # when we eventually hit the totals, return the number of tokens
-      # if we never hit the totals
-      nil
     end
 
     def recalculate_prize_position(rule)
