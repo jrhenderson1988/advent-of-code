@@ -1,25 +1,20 @@
+require 'set'
+
 module Aoc
   class Day14 < Day
     def part1
-      grid_width = test? ? 11 : 101
-      grid_height = test? ? 7 : 103
-
-      calculate_safety_factor(
-        simulate_moves(robots, 100, grid_width, grid_height),
-        grid_width,
-        grid_height
-      )
+      calculate_safety_factor(simulate_moves(robots, 100))
     end
 
     def part2
-      "TODO"
+      find_steps_with_no_overlaps(robots)
     end
 
-    def simulate_moves(robots, moves, grid_width, grid_height)
-      robots.map { |robot| move_robot(robot, moves, grid_width, grid_height) }
+    def simulate_moves(robots, moves)
+      robots.map { |robot| move_robot(robot, moves) }
     end
 
-    def move_robot(robot, times, grid_width, grid_height)
+    def move_robot(robot, times)
       position, velocity = robot
       px, py = position
       vx, vy = velocity
@@ -33,12 +28,20 @@ module Aoc
       @robots ||= lines.map { |line| parse_line(line) }
     end
 
+    def grid_width
+      test? ? 11 : 101
+    end
+
+    def grid_height
+      test? ? 7 : 103
+    end
+
     def parse_line(line)
       px, py, vx, vy = line.match(/p=(-?\d+),(-?\d+) v=(-?\d+),(-?\d+)/).captures
       [[px.to_i, py.to_i], [vx.to_i, vy.to_i]]
     end
 
-    def calculate_safety_factor(robots, grid_width, grid_height)
+    def calculate_safety_factor(robots)
       quadrant_width = grid_width / 2
       quadrant_height = grid_height / 2
 
@@ -67,6 +70,22 @@ module Aoc
       end
 
       robots_in_quadrant.length
+    end
+
+    def find_steps_with_no_overlaps(robots)
+      total_robots = robots.length
+      steps = 0
+      while true
+        steps += 1
+        robots = simulate_moves(robots, 1)
+        if unique_robot_positions(robots) == total_robots
+          return steps
+        end
+      end
+    end
+
+    def unique_robot_positions(robots)
+      robots.map { |robot| robot[0] }.to_set.length
     end
   end
 end
