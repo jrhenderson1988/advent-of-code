@@ -1,14 +1,18 @@
 module Aoc
   class Day13 < Day
+    MAX_ATTEMPTS_PER_BUTTON = 10000
+
     def part1
-      rules.map { |rule| fewest_tokens_to_win_prize_naive(rule) }
+      rules.map { |rule| fewest_tokens_to_win_prize_smart(rule) }
            .reject { |cost| cost.nil? }
            .sum
     end
 
     def part2
-      recalculated_rules = rules.map { |rule| recalculate_prize_position(rule) }
-      puts(recalculated_rules.inspect)
+      rules.map { |rule| recalculate_prize_position(rule) }
+           .map { |rule| fewest_tokens_to_win_prize_smart(rule) }
+           .reject { |cost| cost.nil? }
+           .sum
     end
 
     def rules
@@ -54,6 +58,43 @@ module Aoc
       lowest_cost
     end
 
+    def fewest_tokens_to_win_prize_smart(rule)
+      # fewest_tokens_to_win_prize_naive(rule)
+
+      a, b, prize = rule
+      a_x, a_y = a
+      b_x, b_y = b
+      prize_x, prize_y = prize
+
+      max_b_presses = [(prize_x / b_x), (prize_y / b_y)].min
+      # max_a_presses = [(prize_x / a_x), (prize_y / a_y)].min
+      max_a_presses = MAX_ATTEMPTS_PER_BUTTON # set an arbitrary upper limit before we decide it's not possible
+      min_b_presses = [max_b_presses - MAX_ATTEMPTS_PER_BUTTON, 0].max
+      for button_b_presses in (max_b_presses).downto(min_b_presses)
+        for button_a_presses in (0..max_a_presses)
+          actual_x = (button_a_presses * a_x) + (button_b_presses * b_x)
+          actual_y = (button_a_presses * a_y) + (button_b_presses * b_y)
+
+          if matches([actual_x, actual_y], prize)
+            return cost_of_a_tokens(button_a_presses) + cost_of_b_tokens(button_b_presses)
+          end
+
+          break if exceeds([actual_x, actual_y], prize)
+        end
+      end
+      # puts("#{rule.inspect} -> #{max_b_presses}")
+
+      # SMARTER_WAY
+      # a costs 3 tokens
+      # b costs 1 token
+      # prioritise pressing b (cost 1 token)
+      # work out the most amount of times we can press B and either hit, or stay below the totals
+      # iterate down, removing a B button press and continue pressing A until we hit the totals or we exceed in any way
+      # when we eventually hit the totals, return the number of tokens
+      # if we never hit the totals
+      nil
+    end
+
     def recalculate_prize_position(rule)
       a, b, prize = rule
       prize_x, prize_y = prize
@@ -81,12 +122,3 @@ module Aoc
     end
   end
 end
-
-# SMARTER_WAY
-# a costs 3 tokens
-# b costs 1 token
-# prioritise pressing b (cost 1 token)
-# work out the most amount of times we can press B and either hit, or stay below the totals
-# iterate down, removing a B button press and continue pressing A until we hit the totals or we exceed in any way
-# when we eventually hit the totals, return the number of tokens
-# if we never hit the totals

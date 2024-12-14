@@ -31,7 +31,7 @@ Dir[File.dirname(__FILE__) + "/data/*.out"].each do |output_path|
       expected = File.read(output_path)
 
       clazz = Object.const_get(class_name)
-      instance = clazz.new(input)
+      instance = clazz.new(input, true) # true means test
       actual = instance.send("part#{part}").to_s
 
       expect(actual).to eq(expected)

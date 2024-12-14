@@ -33,7 +33,7 @@ module Aoc
       method_name = "part#{part}"
       input = File.read(File.dirname(File.dirname(File.dirname(__FILE__))) + "/input/#{day}.in")
       clazz = Object.const_get(class_name)
-      instance = clazz.new(input)
+      instance = clazz.new(input, false) # false = not a test
 
       start = Time.now
       actual = instance.send(method_name).to_s
