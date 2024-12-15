@@ -12,8 +12,9 @@ module Aoc
     LEFT = '<'
 
     def part1
-      position, boxes = [initial_robot_position, initial_boxes]
-      _, boxes = simulate_robot(instructions, position, boxes)
+      g = grid
+      position, boxes, walls = [initial_robot_position(g), initial_boxes(g), walls(g)]
+      _, boxes = simulate_robot(instructions, position, walls, boxes)
       sum_of_box_gps_coordinates(boxes)
     end
 
@@ -21,27 +22,27 @@ module Aoc
       "TODO"
     end
 
-    def simulate_robot(instructions, position, boxes)
+    def simulate_robot(instructions, position, walls, boxes)
       instructions.each do |instruction|
-        position, boxes = execute_instruction(instruction, position, boxes)
+        position, boxes = execute_instruction(instruction, position, walls, boxes)
       end
 
       [position, boxes]
     end
 
-    def execute_instruction(instruction, position, boxes)
+    def execute_instruction(instruction, position, walls, boxes)
       delta = to_delta(instruction)
       new_position = apply_delta(position, delta)
       should_move = true
       boxes_to_move = Set[]
       while true
-        if wall?(new_position)
+        if wall?(walls, new_position)
           should_move = false
           break
         elsif box?(boxes, new_position)
           boxes_to_move.add(new_position)
           new_position = apply_delta(new_position, delta)
-        elsif empty?(boxes, new_position)
+        elsif empty?(walls, boxes, new_position)
           should_move = true
           break
         else
@@ -71,55 +72,42 @@ module Aoc
       (y * 100) + x
     end
 
-    def instructions
-      @instructions ||= chunks[1].strip.lines.map { |line| line.strip }.join("").chars
+    def walls(grid)
+      coords(grid).filter { |coord| grid[coord[1]][coord[0]] == WALL }.to_set
     end
 
-    def grid
-      @grid ||= chunks[0].strip.lines.map { |line| line.strip.chars }
+    def initial_boxes(grid)
+      coords(grid).filter { |coord| grid[coord[1]][coord[0]] == BOX }.to_set
     end
 
-    def walls
-      @walls ||= coordinates.filter { |coord| grid[coord[1]][coord[0]] == WALL }.to_set
-    end
-
-    def initial_boxes
-      @initial_boxes ||= coordinates.filter { |coord| grid[coord[1]][coord[0]] == BOX }.to_set
-    end
-
-    def wall?(point)
-      walls.member?(point)
+    def wall?(wall_positions, point)
+      wall_positions.member?(point)
     end
 
     def box?(box_positions, point)
       box_positions.member?(point)
     end
 
-    def empty?(box_positions, point)
-      !wall?(point) && !box?(box_positions, point)
+    def empty?(wall_positions, box_positions, point)
+      !wall?(wall_positions, point) && !box?(box_positions, point)
     end
 
-    def coordinates
-      @coordinates ||= (0..grid_height - 1).flat_map { |y| (0..grid_width - 1).map { |x| [x, y] } }
+    def coords(grid)
+      (0..height(grid) - 1).flat_map { |y| (0..width(grid) - 1).map { |x| [x, y] } }
     end
 
-    def grid_width
-      @grid_width ||= grid[0].length
+    def width(grid)
+      grid[0].length
     end
 
-    def grid_height
-      @grid_height ||= grid.length
+    def height(grid)
+      grid.length
     end
 
-    def initial_robot_position
-      @initial_robot_position ||=
-        (0..grid_height - 1).flat_map { |y| (0..grid_width - 1).map { |x| [x, y] } }
-                            .filter { |point| grid[point[1]][point[0]] == ROBOT }
-                            .first
-    end
-
-    def chunks
-      @chunks ||= content.gsub(/\r\n|\r|\n/, "\n").split("\n\n")
+    def initial_robot_position(grid)
+      (0..height(grid) - 1).flat_map { |y| (0..width(grid) - 1).map { |x| [x, y] } }
+                           .filter { |point| grid[point[1]][point[0]] == ROBOT }
+                           .first
     end
 
     def to_delta(direction)
@@ -141,6 +129,18 @@ module Aoc
       x, y = position
       dx, dy = delta
       [x + dx, y + dy]
+    end
+
+    def instructions
+      @instructions ||= chunks[1].strip.lines.map { |line| line.strip }.join("").chars
+    end
+
+    def grid
+      @grid ||= chunks[0].strip.lines.map { |line| line.strip.chars }
+    end
+
+    def chunks
+      @chunks ||= content.gsub(/\r\n|\r|\n/, "\n").split("\n\n")
     end
   end
 end
