@@ -9,12 +9,12 @@ module Aoc
     DIRECTIONS = [UP, RIGHT, DOWN, LEFT]
 
     def part1
-      find_cheapest_path_cost(start_point, end_point, [1, 0])
-      # dijkstra(start_point, end_point)
+      find_best_path_score
     end
 
     def part2
-      "TODO"
+      best_score = find_best_path_score
+      total_cells_in_best_paths(best_score)
     end
 
     def width
@@ -45,8 +45,8 @@ module Aoc
       @grid ||= lines.map { |line| line.strip.chars }
     end
 
-    def find_cheapest_path_cost(start, target, initial_direction = RIGHT)
-      source = [start, initial_direction]
+    def find_best_path_score
+      source = [start_point, RIGHT]
       visited = Set[source]
       dist = { source => 0 }
       prev = { source => nil }
@@ -59,7 +59,7 @@ module Aoc
 
         visited.add(u)
 
-        for neighbour in neighbours(u)
+        neighbours(u).each do |neighbour|
           v, cost = neighbour
 
           unless visited.member?(v)
@@ -73,47 +73,43 @@ module Aoc
         end
       end
 
-      dist.filter { |state, _| state[0] == target }.map { |_, distance| distance }.min
+      dist.filter { |state, _| state[0] == end_point }
+          .map { |_, distance| distance }
+          .min
     end
 
-    # def dijkstra(start, target)
-    #   source = [start, RIGHT]
-    #   dist = {}
-    #   prev = {}
-    #   queue = []
-    #   vertices = coordinates.reject { |coord| walls.member?(coord) }
-    #                         .flat_map { |coord| DIRECTIONS.map { |dir| [coord, dir] } }
-    #   # puts("v count: #{vertices.length}")
-    #   vertices.each do |v|
-    #     dist[v] = 4611686018427387903
-    #     prev[v] = nil
-    #     queue.append(v)
-    #   end
-    #   dist[source] = 0
-    #   visited = Set[]
-    #
-    #   puts(queue.length)
-    #   while !queue.empty?
-    #     u_idx = (0..queue.length - 1).reduce { |a, b| dist[queue[a]] < dist[queue[b]] ? a : b }
-    #     u = queue[u_idx]
-    #     queue.delete_at(u_idx)
-    #     # puts("u: #{u.inspect}, point: #{u[0]}, facing: #{u[1]}")
-    #     visited.add(u)
-    #
-    #     for neighbour in neighbours(u)
-    #       v, cost = neighbour
-    #       if !visited.member?(v)
-    #         alt = dist[u] + cost
-    #         if alt < dist[v]
-    #           dist[v] = alt
-    #           prev[v] = u
-    #         end
-    #       end
-    #     end
-    #   end
-    #
-    #   dist.filter { |state, _| state[0] == target }.map { |_, distance| distance }.min
-    # end
+    def total_cells_in_best_paths(best_score)
+      queue = [[start_point, RIGHT, 0, [start_point]]]
+      visited = {}
+      best_paths = []
+
+      until queue.empty?
+        pos, dir, score, path = queue.shift
+        key = [pos, dir]
+        if score > best_score
+          next
+        elsif !visited[key].nil? && visited[key] < score
+          next
+        end
+
+        visited[key] = score
+
+        if pos == end_point && score == best_score
+          best_paths.append(path)
+          next
+        end
+
+        new_pos = [pos[0] + dir[0], pos[1] + dir[1]]
+        unless walls.member?(new_pos)
+          queue.append([new_pos, dir, score + 1, path + [new_pos]])
+        end
+
+        queue.append([pos, turn_anti_clockwise(dir), score + 1000, path])
+        queue.append([pos, turn_clockwise(dir), score + 1000, path])
+      end
+
+      best_paths.flat_map { |best_path| best_path.map { |point| point } }.to_set.length
+    end
 
     def neighbours(state)
       DIRECTIONS.map { |delta| neighbour(state, delta) }
