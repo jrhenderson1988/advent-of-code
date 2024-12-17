@@ -10,6 +10,7 @@ module Aoc
 
     def part1
       find_cheapest_path_cost(start_point, end_point, [1, 0])
+      # dijkstra(start_point, end_point)
     end
 
     def part2
@@ -44,7 +45,7 @@ module Aoc
       @grid ||= lines.map { |line| line.strip.chars }
     end
 
-    def find_cheapest_path_cost(start, target, initial_direction = [1, 0])
+    def find_cheapest_path_cost(start, target, initial_direction = RIGHT)
       source = [start, initial_direction]
       visited = Set[source]
       dist = { source => 0 }
@@ -56,13 +57,15 @@ module Aoc
         u = queue[u_idx]
         queue.delete_at(u_idx)
 
+        visited.add(u)
+
         for neighbour in neighbours(u)
           v, cost = neighbour
+
           unless visited.member?(v)
-            visited.add(v)
             queue.append(v)
             alt = dist[u] + cost
-            if dist[v].nil? || alt < dist[v]
+            if dist[v].nil? || (alt < dist[v])
               dist[v] = alt
               prev[v] = u
             end
@@ -70,16 +73,51 @@ module Aoc
         end
       end
 
-      dist.filter { |state, _| state[0] == target }
-          .map { |_, distance| distance }
-          .min
+      dist.filter { |state, _| state[0] == target }.map { |_, distance| distance }.min
     end
+
+    # def dijkstra(start, target)
+    #   source = [start, RIGHT]
+    #   dist = {}
+    #   prev = {}
+    #   queue = []
+    #   vertices = coordinates.reject { |coord| walls.member?(coord) }
+    #                         .flat_map { |coord| DIRECTIONS.map { |dir| [coord, dir] } }
+    #   # puts("v count: #{vertices.length}")
+    #   vertices.each do |v|
+    #     dist[v] = 4611686018427387903
+    #     prev[v] = nil
+    #     queue.append(v)
+    #   end
+    #   dist[source] = 0
+    #   visited = Set[]
+    #
+    #   puts(queue.length)
+    #   while !queue.empty?
+    #     u_idx = (0..queue.length - 1).reduce { |a, b| dist[queue[a]] < dist[queue[b]] ? a : b }
+    #     u = queue[u_idx]
+    #     queue.delete_at(u_idx)
+    #     # puts("u: #{u.inspect}, point: #{u[0]}, facing: #{u[1]}")
+    #     visited.add(u)
+    #
+    #     for neighbour in neighbours(u)
+    #       v, cost = neighbour
+    #       if !visited.member?(v)
+    #         alt = dist[u] + cost
+    #         if alt < dist[v]
+    #           dist[v] = alt
+    #           prev[v] = u
+    #         end
+    #       end
+    #     end
+    #   end
+    #
+    #   dist.filter { |state, _| state[0] == target }.map { |_, distance| distance }.min
+    # end
 
     def neighbours(state)
       DIRECTIONS.map { |delta| neighbour(state, delta) }
-                .filter do |neighbour|
-        empty_space?(neighbour)
-      end
+                .filter { |neighbour| empty_space?(neighbour) }
     end
 
     def neighbour(state, delta)
@@ -104,5 +142,36 @@ module Aoc
       dx, dy = delta
       [x + dx, y + dy]
     end
+
+    def turn_anti_clockwise(direction)
+      case direction
+      when UP
+        LEFT
+      when LEFT
+        DOWN
+      when DOWN
+        RIGHT
+      when RIGHT
+        UP
+      else
+        raise ArgumentError
+      end
+    end
+
+    def turn_clockwise(direction)
+      case direction
+      when UP
+        RIGHT
+      when RIGHT
+        DOWN
+      when DOWN
+        LEFT
+      when LEFT
+        UP
+      else
+        raise ArgumentError
+      end
+    end
+
   end
 end
