@@ -1,19 +1,37 @@
 module Aoc
   class Day17 < Day
     def part1
-      ptr = 0
-      registers = create_registers
-      output = []
-      until halted?(ptr)
-        op_code, operand = read_next_instruction(ptr)
-        ptr, registers, output = eval_instruction(op_code, operand, ptr, registers, output)
-      end
-
+      output = execute_program(create_registers)
       output.join(",")
     end
 
     def part2
-      "TODO"
+      _, b, c = create_registers
+
+      i = 0
+      while true
+        # puts(i)
+        registers = [i, b, c]
+        output = execute_program(registers)
+        if output == program
+          return i
+        end
+        i += 1
+      end
+
+      i
+    end
+
+    def execute_program(registers)
+      ptr = 0
+      output = []
+      until halted?(ptr)
+        op_code, operand = read_next_instruction(ptr)
+        ptr, registers, output = eval_instruction(op_code, operand, ptr, registers, output)
+        # puts("#{registers.inspect} -> #{output.inspect}")
+      end
+
+      output
     end
 
     def chunks
