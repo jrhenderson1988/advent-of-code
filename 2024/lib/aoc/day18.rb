@@ -7,12 +7,19 @@ module Aoc
     def part1
       fallen_byte_positions =
         (0..total_bytes_to_fall - 1).map { |i| falling_byte_positions[i] }.to_set
-      # print_grid(fallen_byte_positions)
-      fewest_steps_to_end([0, 0], [grid_size_inclusive, grid_size_inclusive], fallen_byte_positions)
+      fewest_steps_to_end([0, 0], [grid_max, grid_max], fallen_byte_positions)
     end
 
     def part2
-      "TODO"
+      (0..falling_byte_positions.length - 1).each do |i|
+        fallen_byte_positions = (0..i - 1).map { |j| falling_byte_positions[j] }.to_set
+        result = fewest_steps_to_end([0, 0], [grid_max, grid_max], fallen_byte_positions)
+        if result.nil?
+          return falling_byte_positions[i - 1].join(",")
+        end
+      end
+
+      nil
     end
 
     def fewest_steps_to_end(start, finish, fallen_byte_positions)
@@ -52,14 +59,10 @@ module Aoc
     end
 
     def falling_byte_positions
-      lines.map { |line| line.split(",").map { |n| n.to_i } }
+      @falling_byte_positions ||= lines.map { |line| line.split(",").map { |n| n.to_i } }
     end
 
-    def coordinates
-      (0..grid_size_inclusive).flat_map { |y| (0..grid_size_inclusive).map { |x| [x, y] } }
-    end
-
-    def grid_size_inclusive
+    def grid_max
       test? ? 6 : 70
     end
 
@@ -69,21 +72,13 @@ module Aoc
 
     def in_bounds?(point)
       x, y = point
-      x >= 0 && x <= grid_size_inclusive && y >= 0 && y <= grid_size_inclusive
+      x >= 0 && x <= grid_max && y >= 0 && y <= grid_max
     end
 
     def apply_delta(point, delta)
       x, y = point
       dx, dy = delta
       [x + dx, y + dy]
-    end
-
-    def print_grid(fallen_byte_positions)
-      (0..grid_size_inclusive).each do |y|
-        puts((0..grid_size_inclusive).map { |x|
-          fallen_byte_positions.member?([x, y]) ? "#" : "."
-        }.join(""))
-      end
     end
   end
 end
