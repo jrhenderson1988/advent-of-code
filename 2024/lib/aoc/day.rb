@@ -13,6 +13,10 @@ module Aoc
       @content
     end
 
+    def chunks
+      @chunks ||= content.gsub(/\r\n|\r|\n/, "\n").split("\n\n")
+    end
+
     def test?
       @test
     end
