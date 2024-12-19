@@ -1,30 +1,26 @@
 module Aoc
   class Day19 < Day
     def part1
-      desired_designs.filter { |design| design_possible?(design) }.length
+      desired_designs.filter { |design| possible_arrangements(design) > 0 }.length
     end
 
     def part2
-      "TODO"
+      desired_designs.map { |design| possible_arrangements(design) }.sum
     end
 
-    def design_possible?(design, level = 0)
-      # puts("#{"." * level}#{design}")
+    def possible_arrangements(design, cache = {})
       if design.length == 0
-        return true
+        return 1
       end
 
-      any_possible = false
-      for pattern in patterns
-        if design[0..pattern.length - 1] == pattern
-          # puts("=== #{pattern}")
-          if design_possible?(design[pattern.length..], level + 1)
-            any_possible = true
-          end
-        end
+      if cache[design].nil?
+        cache[design] =
+          patterns.filter { |pattern| design[0..pattern.length - 1] == pattern }
+                  .map { |pattern| possible_arrangements(design[pattern.length..], cache) }
+                  .sum
+      else
+        cache[design]
       end
-
-      any_possible
     end
 
     def patterns
