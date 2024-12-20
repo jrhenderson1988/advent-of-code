@@ -8,16 +8,50 @@ module Aoc
       total_cells = original_path.length + walls.length
       if total_cells != width * height
         # the racetrack is a single path through the walls, there's only a single possible path
-        # we could effectively ignore the walls and only consider the racetrack (maybe good for
-        # optimisation?)
+        # we could effectively ignore the walls and only consider the racetrack.
         raise ArgumentError, "Invalid racetrack"
       end
 
-      total_cheats_that_save(original_path, distances_to_finish(original_path), p1_threshold)
+      total_cheats_that_save(original_path, distances_to_finish(original_path), 2, p1_threshold)
     end
 
     def part2
-      "TODO"
+      original_path = run_race_without_cheating
+
+      total_cells = original_path.length + walls.length
+      if total_cells != width * height
+        raise ArgumentError, "Invalid racetrack"
+      end
+
+      total_cheats_that_save(original_path, distances_to_finish(original_path), 20, p2_threshold)
+    end
+
+    def possible_cheats_at(point, distance)
+      surrounding_points_with_distance(point, distance)
+        .reject { |cheat| cheat[0] == point }
+        .filter { |cheat| racetrack?(cheat[0]) }
+        .to_set
+    end
+
+    def surrounding_points_with_distance(point, max_distance)
+      x, y = point
+
+      min_y = y - max_distance
+      max_y = y + max_distance
+
+      (min_y..max_y).flat_map { |dy|
+        distance_from_y = (y - dy).abs
+        min_x = x - (max_distance - distance_from_y)
+        max_x = x + (max_distance - distance_from_y)
+
+        (min_x..max_x).map { |dx|
+          distance_from_x = (x - dx).abs
+
+          p = [dx, dy]
+          d = distance_from_y + distance_from_x
+          [p, d]
+        }
+      }
     end
 
     def p1_threshold
@@ -63,21 +97,16 @@ module Aoc
                                    .to_h
     end
 
-    def possible_scores_by_cheating_at_position(position, original_path, distances_to_finish)
-      point = original_path[position]
-
-      one_step = adjacent_points(point).map { |ap| [ap, 1] }
-      two_step = adjacent_points(point).flat_map { |ap| adjacent_points(ap).map { |ap2| [ap2, 2] } }
-      possible_cheats = (one_step + two_step).to_set
-
-      possible_cheats.filter { |c| racetrack?(c[0]) }
-                     .map { |c| distances_to_finish[c[0]] + c[1] + position }
+    def possible_scores_cheating_at_position(pos, path, dist_to_finish, max_cheat_dist)
+      possible_cheats_at(path[pos], max_cheat_dist)
+        .filter { |c| racetrack?(c[0]) }
+        .map { |c| dist_to_finish[c[0]] + c[1] + pos }
     end
 
-    def total_cheats_that_save(original_path, distances_to_finish, threshold)
-      (0..original_path.length - 1)
-        .flat_map { |i| possible_scores_by_cheating_at_position(i, original_path, distances_to_finish) }
-        .map { |poss_score| [original_path.length - 1 - poss_score, 0].max }
+    def total_cheats_that_save(path, dist_to_finish, max_cheat_dist, threshold)
+      (0..path.length - 1)
+        .flat_map { |i| possible_scores_cheating_at_position(i, path, dist_to_finish, max_cheat_dist) }
+        .map { |poss_score| [path.length - 1 - poss_score, 0].max }
         .filter { |poss_score| poss_score >= threshold }
         .length
     end
@@ -113,11 +142,6 @@ module Aoc
 
     def coordinates
       @coordinates ||= (0..height - 1).flat_map { |y| (0..width - 1).map { |x| [x, y] } }
-    end
-
-    def internal_walls
-      @internal_walls ||= walls.reject { |point| point[0] == 0 || point[0] == width - 1 }
-                               .reject { |point| point[1] == 0 || point[1] == height - 1 }
     end
 
     def wall?(point)
