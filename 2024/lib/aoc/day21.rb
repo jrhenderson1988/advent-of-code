@@ -53,16 +53,17 @@ module Aoc
       # d_pad_neighbours.each { |k, v| puts("#{k} -> #{v.inspect}") }
 
       puts(complexity("029A".chars).inspect)
-      # <A^A>^^AvvvA
+      puts(complexity("980A".chars).inspect)
+      puts(complexity("179A".chars).inspect)
+      puts(complexity("456A".chars).inspect)
+      puts(complexity("379A".chars).inspect)
 
-      # TODO - need to convert paths to directions (e.g. 8 -> 7 = "<" or ^ -> A = ">")
-      #
       # Approach:
       # find the shortest path on the numeric pad, converting each path to directions
       # then for every node to node path in the first D pad, work out the shortest path to press each button, again converting each path to directions to press
       # then repeat the same approach again for the outer D pad
 
-      # door_unlock_codes.map { |duc| complexity(duc) }.sum
+      door_unlock_codes.map { |duc| complexity(duc) }.sum
     end
 
     def part2
@@ -116,7 +117,8 @@ module Aoc
           .map { |path| path_to_directions(path, num_pad_neighbours) }
           .map { |path| path + ["A"] }
           .flatten
-      puts(inner_d_pad_paths.join(""))
+      inner_d_pad_paths = ["A"] + inner_d_pad_paths # we always start at A
+      puts("inner:  #{inner_d_pad_paths.join("")}")
 
       # we then need to apply this same logic again, but this time we are using a D pad to control
       # the inner D pad of which is used to press the keys on the numeric pad
@@ -126,7 +128,8 @@ module Aoc
           .map { |path| path_to_directions(path, d_pad_neighbours) }
           .map { |path| path + ["A"] }
           .flatten
-      puts(mid_d_pad_paths.join(""))
+      mid_d_pad_paths = ["A"] + mid_d_pad_paths # we always start at A
+      puts("middle: #{mid_d_pad_paths.join("")}")
 
       outer_d_pad_paths =
         (1...mid_d_pad_paths.length)
@@ -134,9 +137,12 @@ module Aoc
           .map { |path| path_to_directions(path, d_pad_neighbours) }
           .map { |path| path + ["A"] }
           .flatten
-      puts(outer_d_pad_paths.join(""))
+      puts("outer:  #{outer_d_pad_paths.join("")}")
 
-      door_unlock_code.filter { |ch| ch.match(/^\d$/) }.join("").to_i * outer_d_pad_paths.length
+      digits_from_unlock_code = door_unlock_code.filter { |ch| ch.match(/^\d$/) }.join("").to_i
+      path_length = outer_d_pad_paths.length
+      puts("#{digits_from_unlock_code} * #{path_length}")
+      digits_from_unlock_code * path_length
     end
 
     def num_pad_grid
