@@ -13,17 +13,41 @@ module Aoc
     end
 
     def system_correct?(gates)
-      x = (0...total_x_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
-      y = (0...total_y_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
-      result = execute_system_with_inputs(gates, x, y)
-      puts("expected: #{x + y}, actual: #{result}")
-      x + y == result
+      if test?
+        and_system_correct?(gates)
+      else
+        add_system_correct(gates)
+      end
+
       # pick some random numbers (maybe we should find out the bit size of the inputs and generate
       #   random numbers within those bit sizes)
       # execute the system (passing in the gates), with the two numbers
       # verify that the output of executing the system produces the same output as we get from
       #   adding the two numbers
       # maybe we can do this will a few different sets of random numbers
+    end
+
+    def and_system_correct?(gates)
+
+      x = (0...total_x_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
+      y = (0...total_y_wires).map { |_| "0" }.join("").to_i(2) # all the 1s
+      expected = x & y
+      actual = execute_system_with_inputs(gates, x, y)
+
+      puts("expected: #{expected}, actual: #{actual}")
+
+      expected == actual
+    end
+
+    def add_system_correct(gates)
+      x = (0...total_x_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
+      y = (0...total_y_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
+      expected = x + y
+      actual = execute_system_with_inputs(gates, x, y)
+
+      puts("expected: #{expected}, actual: #{actual}")
+
+      expected == actual
     end
 
     def execute_system_with_inputs(gates, x, y)
