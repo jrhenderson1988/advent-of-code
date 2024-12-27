@@ -6,84 +6,23 @@ module Aoc
     end
 
     def part2
-      # 2,4 -> bst(4) -> B = A % 8
-      # 1,1 -> bxl(1) -> B = B ^ 1
-      # 7,5 -> cdv(5) -> C = A / (2 ^ B)
-      # 0,3 -> adv(3) -> A = A / (2 ^ 3)
-      # 1,4 -> bxl(4) -> B = B ^ 4
-      # 4,4 -> bxc(4) -> B = B ^ C
-      # 5,5 -> out(5) -> OUTPUT B % 8
-      # 3,0 -> jnz(0) -> IF A == 0 HALT! ELSE IP = 0
+      find_smallest_a_for_quine(0, 0)
+    end
 
-      # Translates to:
-      #
-      # while a != 0
-      #   B = A % 8
-      #   B = B ^ 1
-      #   C = A / (2 ^ B)
-      #   A = A / (2 ^ 3)
-      #   B = B ^ 4
-      #   B = B ^ C
-      #   OUTPUT B % 8
+    def find_smallest_a_for_quine(a, i)
+      if execute(a) == program
+        a
+      elsif i == 0 || execute(a) == program[(program.length - i)..]
+        (0...8).map { |n| find_smallest_a_for_quine(8 * a + n, i + 1) }
+               .reject { |n| n.nil? }
+               .min
+      else
+        nil
+      end
+    end
 
-      # In Ruby (refactored):
-      #
-      # a = 30886132
-      # b = 0
-      # c = 0
-      # output = []
-      # while a != 0
-      #   b = (a % 8) ^ 1
-      #   c = a / (2 ** b)
-      #   a = a / 8
-      #   b = b ^ 4 ^ c
-      #   output.append(b % 8)
-      # end
-
-      puts(output.join(","))
-
-      # _, b, c = create_registers
-      #
-      # puts(program.length)
-      #
-      # # Observation: the output increases by 1 character when i reaches 8 times the previous
-      # # time the output increased by 1 character. We could calculate the point to start based on
-      # # the size of the program output (assuming the same happens in the real output).
-      # #
-      # # e.g.
-      # # output size is 1 character long when i is 0
-      # # output size is 2 characters long when i is 8
-      # # output size is 3 characters long when i is 64
-      # # output size is 4 characters long when i is 512
-      # # output size is 5 characters long when i is 4096
-      # # output size is 6 characters long when i is 32768
-      # #
-      # # Given the above, we could start at 8^{<desired output size> - 1}
-      # # in this case, 8^(16-1) = 8^15 = 35184372088832
-      # i = 8 ** (program.length - 1)
-      #
-      # curr_output_size = 0
-      # current_first_char = nil
-      # while true
-      #   # puts(i)
-      #   registers = [i, b, c]
-      #   output = execute_program(registers)
-      #   if output.length != curr_output_size
-      #     curr_output_size = output.length
-      #     puts("new output size: #{curr_output_size} (#{i})")
-      #     if output[0] != current_first_char
-      #       current_first_char = output[0]
-      #       puts("first char changed: #{current_first_char} (#{i})")
-      #     end
-      #   end
-      #
-      #   if output == program
-      #     return i
-      #   end
-      #   i += 1
-      # end
-      #
-      # i
+    def execute(a)
+      execute_program([a, 0, 0])
     end
 
     def execute_program(registers)
@@ -92,7 +31,6 @@ module Aoc
       until halted?(ptr)
         op_code, operand = read_next_instruction(ptr)
         ptr, registers, output = eval_instruction(op_code, operand, ptr, registers, output)
-        # puts("#{registers.inspect} -> #{output.inspect}")
       end
 
       output
