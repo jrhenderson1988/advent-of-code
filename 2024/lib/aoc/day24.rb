@@ -1,3 +1,5 @@
+require 'set'
+
 module Aoc
   class Day24 < Day
     GATE_PATTERN = /^([a-z\d]{3})\s*(AND|OR|XOR)\s*([a-z\d]{3})\s*->\s*([a-z\d]{3})$/
@@ -7,9 +9,65 @@ module Aoc
     end
 
     def part2
-      puts(system_correct?(gates).inspect)
-      # puts(execute_system_with_inputs(gates, 12345, 12345))
-      "TODO"
+      find_wires_to_swap.sort.join(",")
+    end
+
+    def find_wires_to_swap
+      total_wires_to_find = test? ? 4 : 8
+
+      inputs = find_bad_output_wires(gates, total_wires_to_find)
+
+      inputs.sort
+    end
+
+    def find_bad_output_wires(gates, total_wires_to_find)
+      max_x = 2 ** total_x_wires - 1
+      max_y = 2 ** total_y_wires - 1
+
+      bad_outputs = Set[]
+      for _ in 0...1000
+        x = Random.rand(max_x + 1) # random value
+        y = Random.rand(max_y + 1) # random value
+        result = execute_system_with_inputs(gates, x, y)
+        expected = test? ? x & y : x + y
+        if expected != result
+          actual_bits_reversed = to_binary(result, total_z_wires).chars.reverse
+          expected_bits_reversed = to_binary(expected, total_z_wires).chars.reverse
+          (0...actual_bits_reversed.length)
+            .filter { |i| actual_bits_reversed[i] != expected_bits_reversed[i] }
+            .map { |i| "z" + i.to_s.rjust(2, "0") }
+            .each { |bad_z| bad_outputs.add(bad_z) }
+
+          # puts("--- (#{to_binary(x, total_x_wires)} & #{to_binary(y, total_y_wires)} )")
+          # puts("#{to_binary(exp, total_z_wires)}")
+          # puts("#{to_binary(result, total_z_wires)}")
+
+          if bad_outputs.length > total_wires_to_find
+            raise ArgumentError, "too many bad output wires"
+          elsif bad_outputs.length == total_wires_to_find
+            return bad_outputs
+          end
+        end
+      end
+
+      raise ArgumentError, "couldn't find bad output wires - current: #{bad_outputs.inspect}"
+    end
+
+    def find_bad_inputs_and(gates, total_wires_to_find)
+      max_x = 2 ** total_x_wires - 1
+      max_y = 2 ** total_y_wires - 1
+
+      for _ in 0...1000
+        x = Random.rand(max_x + 1) # random value
+        y = Random.rand(max_y + 1) # random value
+        result = execute_system_with_inputs(gates, x, y)
+        if x & y != result
+          puts("(#{x}, #{y}) - expected #{x & y} but got #{result}")
+          return [x, y]
+        end
+      end
+
+      [-1, -1]
     end
 
     def system_correct?(gates)
@@ -30,7 +88,7 @@ module Aoc
     def and_system_correct?(gates)
 
       x = (0...total_x_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
-      y = (0...total_y_wires).map { |_| "0" }.join("").to_i(2) # all the 1s
+      y = (0...total_y_wires).map { |_| "0" }.join("").to_i(2) # all the 0s
       expected = x & y
       actual = execute_system_with_inputs(gates, x, y)
 
