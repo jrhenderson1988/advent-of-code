@@ -18,19 +18,20 @@ module Aoc
       # this one was tricky... I couldn't get it working by doing path finding algorithms. I would
       # always end up too low or too high, and sometimes I'd get the tests to pass but not my input.
       # Had to resort to the Reddit threads to get some hints.
-      door_unlock_codes.map { |duc| complexity(duc) }.sum
+      door_unlock_codes.map { |duc| complexity(duc, 2) }.sum
     end
 
     def part2
-      "TODO"
+      door_unlock_codes.map { |duc| complexity(duc, 25) }.sum
     end
 
-    def complexity(door_unlock_code)
+    def complexity(door_unlock_code, total_d_pad_robots)
       num_pad_steps = path(door_unlock_code, num_pad_key_to_position, num_pad_position_to_key)
-      radiated_steps = path(num_pad_steps, d_pad_key_to_position, d_pad_position_to_key)
-      freezing_steps = path(radiated_steps, d_pad_key_to_position, d_pad_position_to_key)
+      result = (0...total_d_pad_robots).reduce(num_pad_steps) {
+        |steps, _| path(steps, d_pad_key_to_position, d_pad_position_to_key)
+      }
 
-      freezing_steps.length * digits_of_door_unlock_code(door_unlock_code)
+      result.length * digits_of_door_unlock_code(door_unlock_code)
     end
 
     def digits_of_door_unlock_code(door_unlock_code)
