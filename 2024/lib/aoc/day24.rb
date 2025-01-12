@@ -13,14 +13,13 @@ module Aoc
     end
 
     def find_wires_to_swap
-      total_wires_to_find = test? ? 4 : 8
-
-      inputs = find_bad_output_wires(gates, total_wires_to_find)
+      inputs = test? ? find_bad_output_wires_and(gates) : find_bad_wires_ripple_carry_adder(gates)
 
       inputs.sort
     end
 
-    def find_bad_output_wires(gates, total_wires_to_find)
+    def find_bad_output_wires_and(gates)
+      total_wires_to_find = 4
       max_x = 2 ** total_x_wires - 1
       max_y = 2 ** total_y_wires - 1
 
@@ -29,7 +28,7 @@ module Aoc
         x = Random.rand(max_x + 1) # random value
         y = Random.rand(max_y + 1) # random value
         result = execute_system_with_inputs(gates, x, y)
-        expected = test? ? x & y : x + y
+        expected = x & y
         if expected != result
           actual_bits_reversed = to_binary(result, total_z_wires).chars.reverse
           expected_bits_reversed = to_binary(expected, total_z_wires).chars.reverse
@@ -37,10 +36,6 @@ module Aoc
             .filter { |i| actual_bits_reversed[i] != expected_bits_reversed[i] }
             .map { |i| "z" + i.to_s.rjust(2, "0") }
             .each { |bad_z| bad_outputs.add(bad_z) }
-
-          # puts("--- (#{to_binary(x, total_x_wires)} & #{to_binary(y, total_y_wires)} )")
-          # puts("#{to_binary(exp, total_z_wires)}")
-          # puts("#{to_binary(result, total_z_wires)}")
 
           if bad_outputs.length > total_wires_to_find
             raise ArgumentError, "too many bad output wires"
@@ -53,59 +48,66 @@ module Aoc
       raise ArgumentError, "couldn't find bad output wires - current: #{bad_outputs.inspect}"
     end
 
-    def find_bad_inputs_and(gates, total_wires_to_find)
-      max_x = 2 ** total_x_wires - 1
-      max_y = 2 ** total_y_wires - 1
+    def find_bad_wires_ripple_carry_adder(gates)
+      # System is a Ripple Carry Adder (https://en.wikipedia.org/wiki/Adder_(electronics)#/media/File:RippleCarry2.gif)
+      # - The first operation (on x0 and y0) is a half adder and the rest are full adders
 
-      for _ in 0...1000
-        x = Random.rand(max_x + 1) # random value
-        y = Random.rand(max_y + 1) # random value
-        result = execute_system_with_inputs(gates, x, y)
-        if x & y != result
-          puts("(#{x}, #{y}) - expected #{x & y} but got #{result}")
-          return [x, y]
+      # Half adder (https://en.wikipedia.org/wiki/Adder_(electronics)#/media/File:Halfadder.gif):
+      # - Accepts two inputs A and B
+      # - The SUM is produced by A XOR B
+      # - The CARRY is produced by A AND B
+
+      # Full adder (https://en.wikipedia.org/wiki/Adder_(electronics)#/media/File:Fulladder.gif):
+      # - Accepts two inputs A and B as well as a CARRY (from the previous adder)
+      # - The SUM is produced by running A XOR B XOR CARRY
+      # - The output CARRY is produced by running ((A XOR B) AND CARRY) OR (X AND B)
+
+      bad = Set[]
+      gates.each { |gate|
+        a, op, b, out = gate
+
+        # if the output is a z but the operation is not XOR (excluding the last output since it is
+        # formed by the last carry)
+        if (z?(out) && !xor?(op)) && !last_z?(out)
+          bad.add(out)
         end
-      end
 
-      [-1, -1]
-    end
+        # Every XOR operation should involve at least an input (x or y) or an output (z). If the
+        # instruction doesn't involve an input or output, then its output wire is bad. In the first
+        # circuit (a half-adder) the two inputs (x and y) are XOR'd to produce an output (z). In
+        # subsequent circuits (full-adders) the two inputs (x and y) are XOR'd to produce an
+        # intermediate value (neither x, y or z) which is subsequently XOR'd with the carry from the
+        # previous circuit to produce an output (z). No other use of XOR is allowed.
+        if xor?(op) && !x_y_or_z?(out) && !x_y_or_z?(a) && !x_y_or_z?(b)
+          bad.add(out)
+        end
 
-    def system_correct?(gates)
-      if test?
-        and_system_correct?(gates)
-      else
-        add_system_correct(gates)
-      end
+        # an AND must be followed by an OR unless we're looking at the first inputs (since the first
+        # is a half-adder where the carry flows into the following full-adder, and is eventually
+        # part of an XOR operation)
+        if and?(op) && ![a, b].any? { |v| first_x?(v) || first_y?(v) }
+          next_circuit = find_next_circuit(gates, out)
+          unless next_circuit.nil?
+            _, sub_op, _, _ = next_circuit
+            unless or?(sub_op)
+              bad.add(out)
+            end
+          end
+        end
 
-      # pick some random numbers (maybe we should find out the bit size of the inputs and generate
-      #   random numbers within those bit sizes)
-      # execute the system (passing in the gates), with the two numbers
-      # verify that the output of executing the system produces the same output as we get from
-      #   adding the two numbers
-      # maybe we can do this will a few different sets of random numbers
-    end
+        # an XOR must be followed by either an AND or another XOR, meaning that OR may not follow.
+        if xor?(op)
+          next_circuit = find_next_circuit(gates, out)
+          unless next_circuit.nil?
+            _, sub_op, _, _ = next_circuit
+            if or?(sub_op)
+              bad.add(out)
+            end
+          end
+        end
+      }
 
-    def and_system_correct?(gates)
-
-      x = (0...total_x_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
-      y = (0...total_y_wires).map { |_| "0" }.join("").to_i(2) # all the 0s
-      expected = x & y
-      actual = execute_system_with_inputs(gates, x, y)
-
-      puts("expected: #{expected}, actual: #{actual}")
-
-      expected == actual
-    end
-
-    def add_system_correct(gates)
-      x = (0...total_x_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
-      y = (0...total_y_wires).map { |_| "1" }.join("").to_i(2) # all the 1s
-      expected = x + y
-      actual = execute_system_with_inputs(gates, x, y)
-
-      puts("expected: #{expected}, actual: #{actual}")
-
-      expected == actual
+      bad
     end
 
     def execute_system_with_inputs(gates, x, y)
@@ -173,9 +175,9 @@ module Aoc
     def exec_gate(a, op, b)
       case op
       when "OR"
-        a || b
+        a | b
       when "AND"
-        a && b
+        a & b
       when "XOR"
         a ^ b
       else
@@ -217,6 +219,50 @@ module Aoc
       charges = binary.chars.reverse.map { |c| c.to_i == 1 }
       (0...total_y_wires).each { |idx| wires["y#{idx.to_s.rjust(2, "0")}"] = charges[idx] }
       wires
+    end
+
+    def x?(v)
+      v.match?(/^x\d\d$/)
+    end
+
+    def y?(v)
+      v.match?(/^y\d\d$/)
+    end
+
+    def z?(v)
+      v.match?(/^z\d\d$/)
+    end
+
+    def x_y_or_z?(v)
+      x?(v) || y?(v) || z?(v)
+    end
+
+    def xor?(v)
+      v == "XOR"
+    end
+
+    def and?(v)
+      v == "AND"
+    end
+
+    def or?(v)
+      v == "OR"
+    end
+
+    def last_z?(v)
+      v == "z#{total_z_wires - 1}"
+    end
+
+    def first_x?(v)
+      v == "x00"
+    end
+
+    def first_y?(v)
+      v == "y00"
+    end
+
+    def find_next_circuit(gates, out)
+      gates.find { |gate| gate[0] == out || gate[2] == out }
     end
   end
 end
