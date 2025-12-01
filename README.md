@@ -9,3 +9,5 @@ Written in a different language each year:
 - 2021 - Go
 - 2022 - Elixir
 - 2023 - Java
+- 2024 - Ruby
+- 2025 - Groovy
