@@ -1,0 +1,36 @@
+package uk.co.jonathonhenderson.adventofcode.days
+
+import org.junit.jupiter.api.Test
+
+class Day02Test extends DayTest {
+    @Override
+    def input() {
+        "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449," +
+                "38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124".trim()
+    }
+
+    @Test
+    void part1() {
+        expectPart1("1227775554")
+    }
+
+    @Test
+    void part2() {
+//        def range = new Day02.Range(95, 115)
+//        println(range.invalidIdsMadeOfNRepeatedNumbers())
+
+//        def s = "2121212121"
+//        for (def size in ((s.length() / 2)..1)) {
+//            if (s.length() % size == 0) {
+//                def repeat = (int) s.length() / size
+//                def target = s.substring(0, size as int) * repeat
+//
+//                if (target == s) {
+//                    print(target)
+//                }
+//            }
+//        }
+
+        expectPart2("4174379265")
+    }
+}
