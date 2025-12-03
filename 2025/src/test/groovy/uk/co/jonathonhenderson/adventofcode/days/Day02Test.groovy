@@ -16,21 +16,6 @@ class Day02Test extends DayTest {
 
     @Test
     void part2() {
-//        def range = new Day02.Range(95, 115)
-//        println(range.invalidIdsMadeOfNRepeatedNumbers())
-
-//        def s = "2121212121"
-//        for (def size in ((s.length() / 2)..1)) {
-//            if (s.length() % size == 0) {
-//                def repeat = (int) s.length() / size
-//                def target = s.substring(0, size as int) * repeat
-//
-//                if (target == s) {
-//                    print(target)
-//                }
-//            }
-//        }
-
         expectPart2("4174379265")
     }
 }
