@@ -1,4 +1,4 @@
-package uk.co.jonathonhenderson.adventofcode
+package uk.co.jonathonhenderson.adventofcode.utils
 
 import java.nio.file.Files
 import java.nio.file.Path

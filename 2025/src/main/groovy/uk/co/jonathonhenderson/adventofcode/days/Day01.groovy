@@ -1,6 +1,6 @@
 package uk.co.jonathonhenderson.adventofcode.days
 
-import static uk.co.jonathonhenderson.adventofcode.Utils.mathMod
+import static uk.co.jonathonhenderson.adventofcode.utils.Utils.mathMod
 
 class Day01 extends Day {
     private final List<Instruction> instructions

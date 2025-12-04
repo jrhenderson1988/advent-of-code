@@ -6,7 +6,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.function.Supplier
 
-import static uk.co.jonathonhenderson.adventofcode.Utils.readPuzzle
+import static uk.co.jonathonhenderson.adventofcode.utils.Utils.readPuzzle
 
 class Main {
     static void main(String[] args) {
