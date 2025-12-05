@@ -1,14 +1,24 @@
 package uk.co.jonathonhenderson.adventofcode.days
 
+import uk.co.jonathonhenderson.adventofcode.utils.Utils
+
 class Day05 extends Day {
     private final List<RangeInclusive> freshIngredientRanges
     private final List<Long> ingredients
 
     Day05(String content) {
         super(content)
-        def parts = content.split("((\r\n|\r|\n)\\s*){2}")
-        freshIngredientRanges = parts[0].readLines().collect { it.trim() }.findAll { !it.isBlank() }.collect { parseRange(it) }
-        ingredients = parts[1].readLines().collect { it.trim() }.findAll { !it.isBlank() }.collect { it.toLong() }
+        def parts = Utils.splitByEmptyLines(content)
+        freshIngredientRanges = parts.get(0)
+                .readLines()
+                .collect { it.trim() }
+                .findAll { !it.isBlank() }
+                .collect { parseRange(it) }
+        ingredients = parts.get(1)
+                .readLines()
+                .collect { it.trim() }
+                .findAll { !it.isBlank() }
+                .collect { it.toLong() }
     }
 
     @Override
@@ -86,7 +96,6 @@ class Day05 extends Day {
                 new RangeInclusive(Math.min(other.start, this.start), Math.max(other.end, this.end))
             }
         }
-
 
         long totalItems() {
             (end - start) + 1
