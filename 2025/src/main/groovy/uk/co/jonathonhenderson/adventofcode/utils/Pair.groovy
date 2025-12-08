@@ -20,7 +20,7 @@ class Pair<A, B> {
         "Pair($first, $second)"
     }
 
-    static <A, B> Pair<A, B> of(A first, B second) {
+    static <FIRST, SECOND> Pair<FIRST, SECOND> of(FIRST first, SECOND second) {
         new Pair<>(first, second)
     }
 }
