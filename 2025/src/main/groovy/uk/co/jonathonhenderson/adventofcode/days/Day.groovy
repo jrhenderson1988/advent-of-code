@@ -3,6 +3,7 @@ package uk.co.jonathonhenderson.adventofcode.days
 class Day {
 
     protected final String content
+    protected boolean isTest
 
     Day(String content) {
         this.content = content
@@ -16,4 +17,7 @@ class Day {
         "not yet implemented"
     }
 
+    void setTest(boolean isTest) {
+        this.isTest = isTest
+    }
 }

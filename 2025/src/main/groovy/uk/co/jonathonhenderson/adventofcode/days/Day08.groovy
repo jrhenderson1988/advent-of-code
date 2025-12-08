@@ -5,8 +5,6 @@ import uk.co.jonathonhenderson.adventofcode.utils.Pair
 
 class Day08 extends Day {
     private final List<Coord> positions
-    private static final int CYCLES = 10
-    // TODO - this should be 1000 for the real input but 10 for the test input
 
     Day08(String content) {
         super(content.stripIndent().trim())
@@ -18,7 +16,7 @@ class Day08 extends Day {
         def closestPairs = computeDistances()
                 .collect { k, v -> Pair.of(k, v) }
                 .sort { pair -> pair.second() }
-                .take(CYCLES)
+                .take(this.isTest ? 10 : 1000)
                 .collect { it.first() }
 
         def circuits = buildCircuits(closestPairs)

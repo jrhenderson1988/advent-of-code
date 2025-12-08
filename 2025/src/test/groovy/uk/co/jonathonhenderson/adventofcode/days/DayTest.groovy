@@ -38,7 +38,10 @@ class DayTest {
         def clazz = Class.forName(testClassName.substring(0, testClassName.length() - 4))
         def constructor = clazz.getDeclaredConstructor(String.class)
 
-        constructor.newInstance(content) as Day
+        def day = constructor.newInstance(content) as Day
+        day.setTest(true)
+
+        day
     }
 
     def input() {
