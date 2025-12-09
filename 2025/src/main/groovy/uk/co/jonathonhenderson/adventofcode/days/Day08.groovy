@@ -5,19 +5,17 @@ import uk.co.jonathonhenderson.adventofcode.utils.Pair
 
 class Day08 extends Day {
     private final List<Coord> positions
+    private final List<Pair<Pair<Coord, Coord>, Double>> closestDistances
 
     Day08(String content) {
         super(content.stripIndent().trim())
         this.positions = this.content.readLines().collect { line -> Coord.parse(line.trim()) }
+        this.closestDistances = computeClosesDistances(this.positions)
     }
 
     @Override
     String part1() {
-        def closestPairs = computeDistances()
-                .collect { k, v -> Pair.of(k, v) }
-                .sort { pair -> pair.second() }
-                .take(this.isTest ? 10 : 1000)
-                .collect { it.first() }
+        def closestPairs = this.closestDistances.take(this.isTest ? 10 : 1000).collect { it.first() }
 
         def circuits = buildCircuits(closestPairs)
 
@@ -31,42 +29,45 @@ class Day08 extends Day {
 
     @Override
     String part2() {
-        "TODO"
+        def finalConnection = findFinalConnection(this.closestDistances.collect { it.first() })
+        (finalConnection.first().x * finalConnection.second().x).toString()
     }
 
-    private Map<Pair<Coord, Coord>, Double> computeDistances() {
+    private static List<Pair<Pair<Coord, Coord>, Double>> computeClosesDistances(List<Coord> positions) {
         def distances = [:]
 
-        for (int i = 0; i < this.positions.size(); i++) {
-            for (int j = i + 1; j < this.positions.size(); j++) {
-                def a = this.positions.get(i)
-                def b = this.positions.get(j)
+        for (int i = 0; i < positions.size(); i++) {
+            for (int j = i + 1; j < positions.size(); j++) {
+                def a = positions.get(i)
+                def b = positions.get(j)
                 def key = Pair.of(a, b)
                 distances.put(key, a.straightLineDistanceTo(b))
             }
         }
 
-        distances
+        distances.collect { k, v -> Pair.of(k, v) }.sort { pair -> pair.second() } as List<Pair<Pair<Coord, Coord>, Double>>
     }
 
     private List<Set<Coord>> buildCircuits(List<Pair<Coord, Coord>> connections) {
-        def circuits = connections.collect { pair -> Set.of(pair.first(), pair.second()) }
-        def processed = circuits.collect { false }
+        mergeSets(connections.collect { pair -> Set.of(pair.first(), pair.second()) })
+    }
 
-        def newCircuits = []
-        for (int i = 0; i < circuits.size(); i++) {
+    private List<Set<Coord>> mergeSets(List<Set<Coord>> sets) {
+        def processed = sets.collect { false }
+
+        def newSets = []
+        for (int i = 0; i < sets.size(); i++) {
             if (processed[i]) {
                 continue
             }
 
-            def circuit = circuits.get(i)
-            def merged = new HashSet<>(circuit)
+            def merged = new HashSet<>(sets.get(i))
             processed[i] = true
 
             while (true) {
                 def changes = false
-                for (int j = i + 1; j < circuits.size(); j++) {
-                    def current = circuits.get(j)
+                for (int j = i + 1; j < sets.size(); j++) {
+                    def current = sets.get(j)
                     if (!processed[j] && !merged.disjoint(current)) {
                         merged = merged.union(current)
                         processed[j] = true
@@ -79,10 +80,66 @@ class Day08 extends Day {
                 }
             }
 
-            newCircuits.add(merged)
+            newSets.add(merged)
         }
 
-        newCircuits
+        newSets
+    }
+
+    private Pair<Coord, Coord> findFinalConnection(List<Pair<Coord, Coord>> connections) {
+        //println("Total connections: ${connections.size()}")
+        def targetSize = this.positions.size()
+        def circuits = []
+        int i = 0
+        for (def connection in connections) {
+            //if (i % 100 == 0) {
+            //    println("$i...")
+            //}
+            def set = [connection.first(), connection.second()].toSet()
+            circuits.add(set)
+            circuits = mergeSets(circuits)
+            if (circuits.size() == 1 && circuits.get(0).size() == targetSize) {
+                return connection
+            }
+            i++
+        }
+
+        null
+    }
+
+//    private Set<Coord> findFinalConnection(List<Pair<Coord, Coord>> connections) {
+//        def targetSize = this.positions.size()
+//
+//        def sets = connections.collect { [it.first(), it.second()].toSet() }
+//        def circuits = [sets.get(0)]
+//        for (int i = 1; i < sets.size(); i++) {
+//            def item = sets.get(i)
+//            def indices = circuits.findIndexValues { circuit -> intersects(circuit, item) }
+//            if (indices.size() == 0) {
+//                circuits.push(item)
+//            } else if (indices.size() == 1) {
+//                circuits.get(indices[0] as int).addAll(item)
+//            } else if (indices.size() > 1) {
+//                def newCircuits = []
+//                def union = indices.collect { idx -> circuits[idx] }.inject(item) { a, b -> a.union(b) }
+//                newCircuits.push(union)
+//                for (int j = 0; j < circuits.size(); j++) {
+//                    if (j !in indices) {
+//                        newCircuits.push(circuits.get(j))
+//                    }
+//                }
+//
+//                circuits = newCircuits
+//                // join all these circuits together into one
+//            }
+//        }
+//
+//        println(circuits)
+//        null
+//    }
+
+    private static boolean intersects(Set<Coord> a, Set<Coord> b) {
+        return !a.disjoint(b)
     }
 
     @Canonical

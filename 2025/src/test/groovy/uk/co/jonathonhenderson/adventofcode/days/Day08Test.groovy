@@ -36,6 +36,6 @@ class Day08Test extends DayTest {
 
     @Test
     void part2() {
-//        throw new RuntimeException("TODO")
+        expectPart2("25272")
     }
 }
