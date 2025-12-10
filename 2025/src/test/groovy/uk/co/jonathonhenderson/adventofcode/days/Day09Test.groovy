@@ -24,5 +24,6 @@ class Day09Test extends DayTest {
 
     @Test
     void part2() {
+        expectPart2("24")
     }
 }
