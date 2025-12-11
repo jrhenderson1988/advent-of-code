@@ -21,7 +21,7 @@ class Day11 extends Day {
 
     @Override
     String part2() {
-        totalPathsBetweenWithRequiredNodes("svr", "out", false, false)
+        totalPathsBetweenWithRequiredNodes("svr", "out", false, false, [:]).toString()
     }
 
     private int totalPathsBetween(String start, String end) {
@@ -37,25 +37,22 @@ class Day11 extends Day {
         paths
     }
 
-    private int totalPathsBetweenWithRequiredNodes(String start, String end, boolean seenDAC, boolean seenFFT) {
-        seenDAC = start == "dac" ? true : seenDAC
-        seenFFT = start == "fft" ? true : seenFFT
-
-        if (start == end) {
-            if (seenDAC && seenFFT) {
-                return 1
-            } else {
-                return 0
+    private long totalPathsBetweenWithRequiredNodes(String start, String end, boolean seenDAC, boolean seenFFT, Map<String, Long> cache) {
+        def key = "${start}-${end}-${seenDAC}-${seenFFT}"
+        if (cache.containsKey(key)) {
+            cache.get(key)
+        } else if (start == end) {
+            seenDAC && seenFFT ? 1 : 0
+        } else {
+            def paths = 0
+            def outputs = devices.containsKey(start) ? devices.get(start).outputs : []
+            for (def output in outputs) {
+                paths += totalPathsBetweenWithRequiredNodes(output, end, start == "dac" ? true : seenDAC, start == "fft" ? true : seenFFT, cache)
             }
-        }
 
-        def paths = 0
-        def outputs = devices.containsKey(start) ? devices.get(start).outputs : []
-        for (def output in outputs) {
-            paths += totalPathsBetweenWithRequiredNodes(output, end, seenDAC, seenFFT)
+            cache.put(key, paths)
+            paths
         }
-
-        paths
     }
 
     @Canonical
