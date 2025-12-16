@@ -4,8 +4,6 @@ import groovy.transform.Canonical
 import groovy.transform.EqualsAndHashCode
 import uk.co.jonathonhenderson.adventofcode.utils.Pair
 
-import java.time.Instant
-
 class Day09 extends Day {
     private final List<Point> points
 
@@ -39,124 +37,118 @@ class Day09 extends Day {
                 .max()
     }
 
+    //            1111
+    //  01234567890123
+    // 0..............
+    // 1.......#OOO#..
+    // 2.......OOOOO..
+    // 3..#OOOO#OOOO..
+    // 4..OOOOOOOOOO..
+    // 5..#OOOOOO#OO..
+    // 6.........OOO..
+    // 7.........#O#..
+    // 8..............
+
     private long largestRectangleAreaWithOnlyRedAndGreenTiles() {
-        def lines = (0..(points.size() - 1)).collect { i -> Line.of(points.get(i), points.get((i + 1) % points.size())) }
-        def polygon = Polygon.of(lines)
+        def lines = buildLines()
+        def possibleRectangles = computeAndSortPossibleRectangles()
 
-        //            1111
-        //  01234567890123
-        // 0..............
-        // 1.......#OOO#..
-        // 2.......OOOOO..
-        // 3..#OOOO#OOOO..
-        // 4..OOOOOOOOOO..
-        // 5..#OOOOOO#OO..
-        // 6.........OOO..
-        // 7.........#O#..
-        // 8..............
+        for (def possibleRectangle in possibleRectangles) {
+            def rectangleLine = possibleRectangle.first()
+            def area = possibleRectangle.second()
+            def otherDiagonal = otherCornerPoints(rectangleLine)
 
-//        [
-//                Point.of(6, 0),
-//                Point.of(6, 1),
-//                Point.of(6, 2), // should be out but it's in
-//                Point.of(6, 3),
-//                Point.of(6, 4),
-//                Point.of(6, 5),
-//                Point.of(6, 6),
-//                Point.of(6, 7),
-//                Point.of(6, 8),
-//        ].each { pt -> println("$pt -> ${polygon.contains(pt)}") }
-
-
-        def pointPairsToAreas = points
-                .collectMany { a -> points.collect { b -> Pair.of(a, b) } }
-                .collect { Pair.of(it, it.first().area(it.second())) }
-                .findAll { it.second() > 1 } // exclude any that have area 1 (same point)
-                .sort { it.second() } // sort by area
-                .reversed() // largest area first
-
-        int i = 0
-        for (def item in pointPairsToAreas) {
-            if (i % 1000 == 0) {
-                println("${Instant.now()} evaluating $i")
+            if (pointOutsidePolygon(lines, otherDiagonal.a)) {
+                continue
             }
 
-            def points = item.first()
-            def a = points.first()
-            def b = points.second()
-            if (polygon.containsAll(otherCornerPoints(a, b))) {
-                if (polygonContainsAllLines(polygon, getLines(a, b))) {
-                    return item.second()
-                }
+            if (pointOutsidePolygon(lines, otherDiagonal.b)) {
+                continue
             }
 
-            i++
+            if (polygonIntersectsRectangle(lines, rectangleLine, otherDiagonal)) {
+                continue
+            }
+
+            return area
         }
 
         -1
-
-//        println("there are ${pointPairsToAreas.size()} total possible rectangles")
-//        def allFourCornersWithinPolygon = pointPairsToAreas
-//                .findAll { polygon.containsAll(otherCornerPoints(it.first().first(), it.first().second())) }
-//        println("there are ${allFourCornersWithinPolygon.size()} rectangles with 4 corners all within polygon")
-//        def allLinesWithinPolygon = allFourCornersWithinPolygon
-//                .findAll { polygonContainsAllLines(polygon, getLines(it.first().first(), it.first().second())) }
-//        println("there are ${allLinesWithinPolygon.size()} rectangles with all their outer lines in polygon")
-//
-//        def result = allLinesWithinPolygon.sort { it.second() }.reversed().first().second()
-//        // allLinesWithinPolygon.each { println(it) }
-//        println("----------------")
-//        println("RESULT: $result")
-
-//        println(pointPairsToAreas.size())
-//        println(allFourCornersWithinPolygon.size())
-//        println(polygon.verticalLines.size())
-//        println(polygon.horizontalLines.size())
-//        result
     }
 
-    private static List<Point> otherCornerPoints(Point a, Point b) {
-        // find the other two corner points of the rectangle
-        [Point.of(a.x, b.y), Point.of(b.x, a.y)]
+    private List<Line> buildLines() {
+        (0..<points.size()).collect { i -> Line.of(points.get(i), points.get((i + 1) % points.size())) }
     }
 
-    private static List<Line> getLines(Point a, Point b) {
-        def lines = otherCornerPoints(a, b).collectMany { corner -> [a, b].collect { point -> Line.of(point, corner) } }
-//        println("$a / $b OTHER CORNERS: $lines")
-        lines
+    private List<Pair<Line, Long>> computeAndSortPossibleRectangles() {
+        points.collectMany { a -> points.collect { b -> Line.of(Point.min(a, b), Point.max(a, b)) } }
+                .toSet()
+                .collect { line -> Pair.of(line, line.a.area(line.b)) }
+                .findAll { it.second() > 1 } // exclude any that have area 1 (same point)
+                .sort { it.second() } // sort by area
+                .reversed() // largest area first
     }
 
-    private static boolean polygonContainsAllLines(Polygon polygon, List<Line> lines) {
-        for (def line in lines) {
-            if (!polygonContainsAllPointsInLine(polygon, line)) {
-                return false
-            }
-        }
-        return true
+    private static Line otherCornerPoints(Line line) {
+        def a = line.a
+        def b = line.b
+        def otherA = Point.of(a.x, b.y)
+        def otherB = Point.of(b.x, a.y)
+        Line.of(Point.min(otherA, otherB), Point.max(otherA, otherB))
     }
 
-    private static boolean polygonContainsAllPointsInLine(Polygon polygon, Line line) {
-        if (line.isVertical) {
-            def start = Math.min(line.a.y, line.b.y)
-            def end = Math.max(line.a.y, line.b.y)
-            for (long y = start; y <= end; y++) {
-                def point = Point.of(line.a.x, y)
-                if (!polygon.contains(point)) {
-                    return false
+    private static boolean pointOutsidePolygon(List<Line> polygon, Point point) {
+        // returns true if all vertical lines that cross the point's Y coordinate are either
+        // completely to the left or completely to the right of the point.
+        def linesInScope = polygon.findAll { it.isVertical && point.y >= min(it.a.y, it.b.y) && point.y <= max(it.a.y, it.b.y) }
+        linesInScope.every { point.x < min(it.a.x, it.b.x) } || linesInScope.every { point.x > max(it.a.x, it.b.x) }
+    }
+
+    private static boolean polygonIntersectsRectangle(List<Line> polygon, Line a, Line b) {
+        def minX = [a.a.x, a.b.x, b.a.x, b.b.x].min()
+        def maxX = [a.a.x, a.b.x, b.a.x, b.b.x].max()
+        def minY = [a.a.y, a.b.y, b.a.y, b.b.y].min()
+        def maxY = [a.a.y, a.b.y, b.a.y, b.b.y].max()
+
+        for (def line in polygon) {
+            if (line.isVertical) {
+                def lineX = line.a.x
+                def topPointOfLine = min(line.a.y, line.b.y)
+                def bottomPointOfLine = max(line.a.y, line.b.y)
+
+                // the x coord lines up so that the vertical line MAY intersect
+                if (lineX > minX && lineX < maxX) {
+                    if (bottomPointOfLine > minY && topPointOfLine < minY) {
+                        return true // intersects with top
+                    } else if (bottomPointOfLine > maxY && topPointOfLine < maxY) {
+                        return true // intersects with bottom
+                    }
+                }
+            } else {
+                def lineY = line.a.y
+                def leftPointOfLine = min(line.a.x, line.b.x)
+                def rightPointOfline = max(line.a.x, line.b.x)
+
+                // the y coord lines up so that the horizontal line MAY intersect
+                if (lineY > minY && lineY < maxY) {
+                    if (rightPointOfline > minX && leftPointOfLine < minX) {
+                        return true // intersects with left
+                    } else if (rightPointOfline > maxX && leftPointOfLine < maxX) {
+                        return true // intersects with right
+                    }
                 }
             }
-            return true
-        } else {
-            def start = Math.min(line.a.x, line.b.x)
-            def end = Math.max(line.a.x, line.b.x)
-            for (long x = start; x <= end; x++) {
-                def point = Point.of(x, line.a.y)
-                if (!polygon.contains(point)) {
-                    return false
-                }
-            }
-            return true
         }
+
+        false
+    }
+
+    private static long min(long a, long b) {
+        Math.min(a, b)
+    }
+
+    private static long max(long a, long b) {
+        Math.max(a, b)
     }
 
     @Canonical
@@ -178,6 +170,30 @@ class Day09 extends Day {
             (Math.abs(this.y - other.y) + 1) * (Math.abs(this.x - other.x) + 1)
         }
 
+        static Point min(Point a, Point b) {
+            if (a.x < b.x) {
+                a
+            } else if (a.x > b.x) {
+                b
+            } else if (a.y < b.y) {
+                a
+            } else {
+                b
+            }
+        }
+
+        static Point max(Point a, Point b) {
+            if (a.x > b.x) {
+                a
+            } else if (a.x < b.x) {
+                b
+            } else if (a.y > b.y) {
+                a
+            } else {
+                b
+            }
+        }
+
         @Override
         String toString() {
             "{x=$x, y=$y}"
@@ -194,10 +210,6 @@ class Day09 extends Day {
             this.a = a
             this.b = b
             this.isVertical = a.x == b.x
-
-            if (!(a.x == b.x || a.y == b.y)) {
-                throw new IllegalStateException("Point $a is not adjacent to point $b")
-            }
         }
 
         static Line of(Point a, Point b) {
@@ -206,103 +218,7 @@ class Day09 extends Day {
 
         @Override
         String toString() {
-            "${isVertical ? "VRT" : "HRZ"}($a/$b)"
-        }
-    }
-
-    @Canonical
-    static class Polygon {
-        final List<Line> horizontalLines
-        final List<Line> verticalLines
-        final long maxX
-
-        Polygon(List<Line> lines) {
-            this.horizontalLines = lines.findAll { line -> !line.isVertical }
-            this.verticalLines = lines.findAll { line -> line.isVertical }
-            this.maxX = this.horizontalLines.collect { line -> Math.max(line.a.x, line.b.x) }.max()
-        }
-
-        static Polygon of(List<Line> lines) {
-            new Polygon(lines)
-        }
-
-        boolean containsAll(List<Point> points) {
-            for (def point in points) {
-                if (!contains(point)) {
-                    return false
-                }
-            }
-
-            return true
-        }
-
-        boolean contains(Point point) {
-            //            1111
-            //  01234567890123
-            // 0..............
-            // 1.......#OOO#..
-            // 2.......OOOOO..
-            // 3..#OOOO#OOOO..
-            // 4..OOOOOOOOOO..
-            // 5..#OOOOOO#OO..
-            // 6.........OOO..
-            // 7.........#O#..
-            // 8..............
-
-            // TODO -
-            //  currently, the problem is at the edges. It's saying that 4,2 and 4,12 are not inside
-            //  the polygon
-
-            // if the point is in any line (vertical or horizontal) return true
-            if (verticalLines.any { line -> isOnLine(line, point) }) {
-                return true
-            } else if (horizontalLines.any { line -> isOnLine(line, point) }) {
-                return true
-            }
-
-            // otherwise, do a ray trace to the right to count the intersections with vertical lines
-            // and work out how many intersections there are
-            verticalLines.count { rayIntersects(it, point) } % 2 == 1
-        }
-
-        static boolean rayIntersects(Line line, Point point) {
-//            if (Math.min(line.a.y, line.b.y) > point.y) {
-//                return false // point is above the highest point of the line
-//            } else if (Math.max(line.a.y, line.b.y) < point.y) {
-//                return false // point is below the lowest point of the line
-//            } else {
-//
-//            }
-
-            def result = line.a.x >= point.x && // line is to the right of the point
-                    Math.min(line.a.y, line.b.y) <= point.y && // point is below line's top point
-                    Math.max(line.a.y, line.b.y) >= point.y // point is above line's bottom point
-//            println("$point intersects line $line ? $result")
-            result
-        }
-
-        static boolean isOnLine(Line line, Point point) {
-            if (line.isVertical) {
-                if (point.x != line.a.x) {
-                    return false // point does not have the same X as the line
-                } else if (point.y < Math.min(line.a.y, line.b.y)) {
-                    return false // point is above the top of the line
-                } else if (point.y > Math.max(line.a.y, line.b.y)) {
-                    return false // point is below the bottom of the line
-                } else {
-                    return true
-                }
-            } else { // horizontal
-                if (point.y != line.a.y) {
-                    return false // point does not have the same Y as the line
-                } else if (point.x < Math.min(line.a.x, line.b.x)) {
-                    return false // point is to the left of the leftmost point of the line
-                } else if (point.x > Math.max(line.a.x, line.b.x)) {
-                    return false // point is to the right of the rightmost point of the line
-                } else {
-                    return true
-                }
-            }
+            "($a / $b)"
         }
     }
 }
