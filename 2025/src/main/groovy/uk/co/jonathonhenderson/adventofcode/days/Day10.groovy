@@ -19,7 +19,7 @@ class Day10 extends Day {
 
     @Override
     String part2() {
-        "TODO"
+        manual.collect { minimumButtonPressesToReachJoltageLevels(it) }.sum()
     }
 
     private long minimumButtonPressesToReachTargetLights(MachineInstruction instruction) {
@@ -30,9 +30,25 @@ class Day10 extends Day {
         (path.size() - 1) as long
     }
 
-
     private List<Boolean> pressButton(List<Boolean> lights, List<Integer> button) {
         (0..(lights.size() - 1)).collect { i -> button.contains(i) ? !lights.get(i) : lights.get(i) }
+    }
+
+    private static long minimumButtonPressesToReachJoltageLevels(MachineInstruction instruction) {
+        def start = [0] * instruction.joltageRequirements.size()
+        def target = instruction.joltageRequirements
+        def joltageIncreases = instruction.wiringSchematics.collect { btn -> schematicToJoltageIncreases(btn, start.size()) }
+        def path = bfs(start, { it == target }) { state -> joltageIncreases.collect { joltageIncrease -> increaseJoltage(state, joltageIncrease) } }
+
+        (path.size() - 1) as long
+    }
+
+    private static List<Integer> increaseJoltage(List<Integer> state, List<Integer> button) {
+        (0..<state.size()).collect { i -> state.get(i) + button.get(i) }
+    }
+
+    private static List<Integer> schematicToJoltageIncreases(List<Integer> schematic, int size) {
+        (0..<size).collect { i -> schematic.contains(i) ? 1 : 0 }
     }
 
     @Canonical
