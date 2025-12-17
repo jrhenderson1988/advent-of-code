@@ -22,7 +22,7 @@ class Day10 extends Day {
         manual.collect { minimumButtonPressesToReachJoltageLevels(it) }.sum()
     }
 
-    private long minimumButtonPressesToReachTargetLights(MachineInstruction instruction) {
+    private static long minimumButtonPressesToReachTargetLights(MachineInstruction instruction) {
         def start = [false] * instruction.indicatorLights.size()
         def target = instruction.indicatorLights
         def path = bfs(start, { it == target }) { state -> instruction.wiringSchematics.collect { btn -> pressButton(state, btn) } }
@@ -30,7 +30,7 @@ class Day10 extends Day {
         (path.size() - 1) as long
     }
 
-    private List<Boolean> pressButton(List<Boolean> lights, List<Integer> button) {
+    private static List<Boolean> pressButton(List<Boolean> lights, List<Integer> button) {
         (0..(lights.size() - 1)).collect { i -> button.contains(i) ? !lights.get(i) : lights.get(i) }
     }
 
@@ -38,13 +38,21 @@ class Day10 extends Day {
         def start = [0] * instruction.joltageRequirements.size()
         def target = instruction.joltageRequirements
         def joltageIncreases = instruction.wiringSchematics.collect { btn -> schematicToJoltageIncreases(btn, start.size()) }
-        def path = bfs(start, { it == target }) { state -> joltageIncreases.collect { joltageIncrease -> increaseJoltage(state, joltageIncrease) } }
+        def path = bfs(start, { it == target }) { state -> possibleNextStates(target, state, joltageIncreases) }
 
+        println("$instruction -> ${path.size() - 1}")
         (path.size() - 1) as long
     }
 
     private static List<Integer> increaseJoltage(List<Integer> state, List<Integer> button) {
         (0..<state.size()).collect { i -> state.get(i) + button.get(i) }
+    }
+
+    private static List<List<Integer>> possibleNextStates(List<Integer> targetState, List<Integer> currentState, List<List<Integer>> joltageIncreases) {
+        // as we're applying the next states, if any of them have values greater than the target, omit them from possible next states
+        joltageIncreases
+                .collect { joltageIncrease -> increaseJoltage(currentState, joltageIncrease) }
+                .findAll { possibleNextState -> !(0..<possibleNextState.size()).any { idx -> possibleNextState.get(idx) > targetState.get(idx) } }
     }
 
     private static List<Integer> schematicToJoltageIncreases(List<Integer> schematic, int size) {
@@ -78,6 +86,11 @@ class Day10 extends Day {
                     .collect(it -> it.toInteger())
 
             new MachineInstruction(indicatorLights, wiringSchematics, joltageRequirements)
+        }
+
+        @Override
+        String toString() {
+            "${indicatorLights.collect { it ? "#" : "." }.join("")} && ${joltageRequirements.join(",")}"
         }
     }
 }
