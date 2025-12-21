@@ -2,7 +2,7 @@ package uk.co.jonathonhenderson.adventofcode.days
 
 import groovy.transform.Canonical
 
-import static uk.co.jonathonhenderson.adventofcode.utils.PathFinding.bfs
+import java.time.Instant
 
 class Day10 extends Day {
     private List<MachineInstruction> manual
@@ -19,7 +19,7 @@ class Day10 extends Day {
 
     @Override
     String part2() {
-        manual.collect { minimumButtonPressesToReachJoltageLevels(it) }.sum()
+        manual.collect { minButtonPressesToReachTarget(it) }.sum()
     }
 
     private static long minimumButtonPressesToReachTargetLights(MachineInstruction instruction) {
@@ -42,6 +42,90 @@ class Day10 extends Day {
 
         println("$instruction -> ${path.size() - 1}")
         (path.size() - 1) as long
+    }
+
+    private static long minButtonPressesToReachTarget(MachineInstruction instruction) {
+        def target = instruction.joltageRequirements
+        def inputs = instruction.wiringSchematics.collect { btn -> schematicToJoltageIncreases(btn, target.size()) }
+        def start = [0] * inputs.size() // 0 presses per input
+
+        def q = [start]
+        def explored = [start].toSet()
+
+        def lastPrint = System.currentTimeSeconds()
+        while (!q.isEmpty()) {
+            def v = q.pop()
+            if ((System.currentTimeSeconds() - lastPrint) > 10) {
+                println("current: $v")
+                lastPrint = System.currentTimeSeconds()
+            }
+
+            if (target == applyPresses(inputs, v)) {
+                def result = v.sum() as long
+                println("Found: $result")
+                return result
+            }
+
+            for (def w in nextPresses(v, target)) {
+                if (!explored.contains(w)) {
+                    explored.add(w as List<Integer>)
+                    q.add(w as List<Integer>)
+                }
+            }
+        }
+
+        return -1
+    }
+
+    private static List<Integer> applyPresses(List<List<Integer>> inputs, List<Integer> presses) {
+        (0..<inputs.size()).collect { i -> multiply(inputs.get(i), presses.get(i)) }.inject { a, b -> add(a, b) }
+    }
+
+    private static List<Integer> add(List<Integer> a, List<Integer> b) {
+        (0..<a.size()).collect { i -> a.get(i) + b.get(i) }
+    }
+
+    private static List<Integer> multiply(List<Integer> values, int multiplier) {
+        values.collect { val -> val * multiplier }
+    }
+
+    private static List<Integer> nextPresses(List<Integer> currentPresses, List<Integer> target) {
+        // compare if each option would potentially exceed the target, and omit it
+
+        def result = []
+        for (def i = 0; i < currentPresses.size(); i++) {
+            def newPresses = currentPresses.collect { it }
+            newPresses[i] = currentPresses.get(i) + 1
+            result.add(newPresses)
+        }
+        result
+    }
+
+    private static <T> List<T> bfs(T start, Closure<Boolean> target, Closure<List<T>> neighbourFn) {
+        def q = [start]
+        def explored = [start].toSet()
+        def prev = [(start): null]
+
+        while (!q.isEmpty()) {
+            def v = q.pop()
+            if (target.call(v) == true) {
+                def path = []
+                while (v != null) {
+                    path.push(v)
+                    v = prev[v]
+                }
+                return path
+            }
+            for (def w in neighbourFn.call(v)) {
+                if (!explored.contains(w)) {
+                    explored.add(w)
+                    prev[w] = v
+                    q.add(w)
+                }
+            }
+        }
+
+        return null
     }
 
     private static List<Integer> increaseJoltage(List<Integer> state, List<Integer> button) {
