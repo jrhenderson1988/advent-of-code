@@ -2,8 +2,18 @@ package uk.co.jonathonhenderson.adventofcode.days
 
 import groovy.transform.Canonical
 
-import java.time.Instant
+import static uk.co.jonathonhenderson.adventofcode.utils.PathFinding.bfs
 
+// Part 2 was HARD. I had it working fine using search algorithms, like BFS, for the sample input.
+// But for the real puzzle inputs, there was just too many branches. Looking online revealed that
+// most used Z3 (which I'd never heard of until now). I didn't want to use external libraries so I
+// hunted around for approaches to the problem and didn't get very far. The few solutions others had
+// also went over my head. This is a pretty maths heavy puzzle and it's not my area of expertise.
+// Ultimately, I found this on Reddit which lead me to the solution.
+// https://www.reddit.com/r/adventofcode/comments/1pk87hl/2025_day_10_part_2_bifurcate_your_way_to_victory/
+// Truth be told, I did have to look at other solutions for inspiration on how to apply it as this
+// was quite difficult for me to comprehend too. Not happy with this one but at least it's done now.
+// I really don't enjoy maths heavy puzzles that require specialised knowledge ¯\_(ツ)_/¯
 class Day10 extends Day {
     private List<MachineInstruction> manual
 
@@ -19,7 +29,7 @@ class Day10 extends Day {
 
     @Override
     String part2() {
-        manual.collect { minButtonPressesToReachTarget(it) }.sum()
+        manual.collect { minimumPressesToReachJoltageLevels(it) }.sum()
     }
 
     private static long minimumButtonPressesToReachTargetLights(MachineInstruction instruction) {
@@ -34,113 +44,67 @@ class Day10 extends Day {
         (0..(lights.size() - 1)).collect { i -> button.contains(i) ? !lights.get(i) : lights.get(i) }
     }
 
-    private static long minimumButtonPressesToReachJoltageLevels(MachineInstruction instruction) {
-        def start = [0] * instruction.joltageRequirements.size()
-        def target = instruction.joltageRequirements
-        def joltageIncreases = instruction.wiringSchematics.collect { btn -> schematicToJoltageIncreases(btn, start.size()) }
-        def path = bfs(start, { it == target }) { state -> possibleNextStates(target, state, joltageIncreases) }
+    private static long minimumPressesToReachJoltageLevels(MachineInstruction instruction) {
+        def buttons = instruction.wiringSchematics
+        def demands = instruction.joltageRequirements
 
-        println("$instruction -> ${path.size() - 1}")
-        (path.size() - 1) as long
-    }
+        def options = [:].withDefault { [] }
+        def output = [:]
+        for (def pressed in buildPowerset((0..<buttons.size()).toList() as List<Long>)) {
+            def supply = (0..<demands.size()).collect { j -> pressed.findAll { b -> j in buttons[b] }.size() }
+            def parity = supply.collect { j -> j % 2 as long }
 
-    private static long minButtonPressesToReachTarget(MachineInstruction instruction) {
-        def target = instruction.joltageRequirements
-        def inputs = instruction.wiringSchematics.collect { btn -> schematicToJoltageIncreases(btn, target.size()) }
-        def start = [0] * inputs.size() // 0 presses per input
-
-        def q = [start]
-        def explored = [start].toSet()
-
-        def lastPrint = System.currentTimeSeconds()
-        while (!q.isEmpty()) {
-            def v = q.pop()
-            if ((System.currentTimeSeconds() - lastPrint) > 10) {
-                println("current: $v")
-                lastPrint = System.currentTimeSeconds()
-            }
-
-            if (target == applyPresses(inputs, v)) {
-                def result = v.sum() as long
-                println("Found: $result")
-                return result
-            }
-
-            for (def w in nextPresses(v, target)) {
-                if (!explored.contains(w)) {
-                    explored.add(w as List<Integer>)
-                    q.add(w as List<Integer>)
-                }
-            }
+            options[parity] << pressed
+            output[pressed] = supply
         }
 
-        return -1
+        return solve(demands, options, output, [:])
     }
 
-    private static List<Integer> applyPresses(List<List<Integer>> inputs, List<Integer> presses) {
-        (0..<inputs.size()).collect { i -> multiply(inputs.get(i), presses.get(i)) }.inject { a, b -> add(a, b) }
-    }
+    private static long solve(List<Long> joltages, Map<List<Long>, List<List<Long>>> options, Map<List<Long>, List<Long>> output, Map<String, Long> cache) {
+        def key = joltages.toString()
+        if (key in cache) {
+            cache[key]
+        } else if (joltages.min() < 0) {
+            Long.MAX_VALUE
+        } else if (joltages.sum() == 0) {
+            0
+        } else {
+            def answer = Long.MAX_VALUE
+            def parity = joltages.collect { v -> v % 2 as long }
 
-    private static List<Integer> add(List<Integer> a, List<Integer> b) {
-        (0..<a.size()).collect { i -> a.get(i) + b.get(i) }
-    }
-
-    private static List<Integer> multiply(List<Integer> values, int multiplier) {
-        values.collect { val -> val * multiplier }
-    }
-
-    private static List<Integer> nextPresses(List<Integer> currentPresses, List<Integer> target) {
-        // compare if each option would potentially exceed the target, and omit it
-
-        def result = []
-        for (def i = 0; i < currentPresses.size(); i++) {
-            def newPresses = currentPresses.collect { it }
-            newPresses[i] = currentPresses.get(i) + 1
-            result.add(newPresses)
-        }
-        result
-    }
-
-    private static <T> List<T> bfs(T start, Closure<Boolean> target, Closure<List<T>> neighbourFn) {
-        def q = [start]
-        def explored = [start].toSet()
-        def prev = [(start): null]
-
-        while (!q.isEmpty()) {
-            def v = q.pop()
-            if (target.call(v) == true) {
-                def path = []
-                while (v != null) {
-                    path.push(v)
-                    v = prev[v]
+            for (def pressed in options.getOrDefault(parity, [])) {
+                def remaining = (0..<joltages.size()).collect { i -> Math.floorDiv(joltages[i] - output[pressed][i], 2) }
+                long sub = solve(remaining, options, output, cache)
+                if (sub == Long.MAX_VALUE) {
+                    // avoid overflowing when Long.MAX_VALUE is returned (see above) and we end up
+                    // doubling it (below).
+                    continue
                 }
-                return path
+                answer = Math.min(answer, pressed.size() + 2 * sub)
             }
-            for (def w in neighbourFn.call(v)) {
-                if (!explored.contains(w)) {
-                    explored.add(w)
-                    prev[w] = v
-                    q.add(w)
-                }
-            }
+
+            cache[key] = answer
+            answer
         }
-
-        return null
     }
 
-    private static List<Integer> increaseJoltage(List<Integer> state, List<Integer> button) {
-        (0..<state.size()).collect { i -> state.get(i) + button.get(i) }
+    private static List<List<Long>> buildPowerset(List<Long> items) {
+        (0..items.size()).collectMany { r -> combinations(items, r) }
     }
 
-    private static List<List<Integer>> possibleNextStates(List<Integer> targetState, List<Integer> currentState, List<List<Integer>> joltageIncreases) {
-        // as we're applying the next states, if any of them have values greater than the target, omit them from possible next states
-        joltageIncreases
-                .collect { joltageIncrease -> increaseJoltage(currentState, joltageIncrease) }
-                .findAll { possibleNextState -> !(0..<possibleNextState.size()).any { idx -> possibleNextState.get(idx) > targetState.get(idx) } }
-    }
-
-    private static List<Integer> schematicToJoltageIncreases(List<Integer> schematic, int size) {
-        (0..<size).collect { i -> schematic.contains(i) ? 1 : 0 }
+    private static List<List<Long>> combinations(List<Long> items, int r) {
+        if (r == 0) {
+            [[]]
+        } else if (items.size() < r) {
+            []
+        } else {
+            (0..<items.size())
+                    .collectMany { i ->
+                        combinations(items[(i + 1)..<items.size()], r - 1)
+                                .collect { combo -> [items[i]] + combo }
+                    }
+        }
     }
 
     @Canonical
