@@ -10,7 +10,7 @@ class D20Tests(unittest.TestCase):
         self.assertEqual(18, day20.part01.run("^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$"))
 
     def test_part2(self):
-        # TODO
+        # no tests given in puzzle for part 2
         pass
 
 
