@@ -56,32 +56,31 @@ class Program:
         return 'ip=%d %s' % (self.ip, str(self.registers))
 
     def execute(self):
-        i = 0
         while True:
-            # Get the instruction that the instruction pointer points to
-            instruction = self.instructions[self.ip] if 0 <= self.ip < len(self.instructions) else None
-            if instruction is None:
+            if self.execute_current_instruction() is None:
                 break
 
-            # Write instruction pointer value to the bound register before instruction
-            self.registers[self.ip_register] = self.ip
+    def execute_current_instruction(self):
+        instruction = self.get_current_instruction()
+        if instruction is None:
+            return None
 
-            # pre_instruction = self.state_repr()
+        # Write instruction pointer value to the bound register before instruction
+        self.registers[self.ip_register] = self.ip
 
-            # Execute the instruction if there is one, otherwise break out of the loop and end execution
-            self.execute_instruction(instruction)
+        # Execute the instruction if there is one, otherwise break out of the loop and end execution
+        self.execute_instruction(instruction)
 
-            # Write the value of the bound register back to the instruction pointer
-            self.ip = self.registers[self.ip_register]
+        # Write the value of the bound register back to the instruction pointer
+        self.ip = self.registers[self.ip_register]
 
-            # Increment the instruction pointer
-            self.ip += 1
+        # Increment the instruction pointer
+        self.ip += 1
 
-            # post_instruction = self.state_repr()
+        return self.ip
 
-            i += 1
-
-            # print('%s %s %s' % (pre_instruction, str(instruction), post_instruction))
+    def get_current_instruction(self):
+        return self.instructions[self.ip] if 0 <= self.ip < len(self.instructions) else None
 
     def instruction_addr(self, i: Instruction):
         self.registers[i.c] = self.registers[i.a] + self.registers[i.b]

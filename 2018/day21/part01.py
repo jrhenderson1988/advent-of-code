@@ -1,16 +1,30 @@
 from .common import Program
 
 def run(content):
+    # originally solved this by putting a conditional breakpoint that is hit when ip == 28 and looking at r3's value
+    # (since the exit condition is effectively when r3 == r0) and executing with register_0 initially as 0. The
+    # breakpoint was hit very quickly and the value left in r3 (in my case) was the right answer.
+
+    # what follow is a more general solution (it assumes that r3 is the register in your exit condition on line 28). It
+    # may not work for all inputs
+
     data = content.strip().splitlines()
 
-    # solved this by putting a conditional breakpoint that is hit when ip == 29 and looking at r3's value (since the
-    # exit condition is effectively when r3 == r0) and executing with register_0 initially as 0. The breakpoint was hit
-    # very quickly and the value left in r3 (in my case) was the right answer.
-    register_0 = 7967233
-    program = Program.parse([register_0, 0, 0, 0, 0, 0], data)
+    # execute the program once, until line 28 is reached
+    registers = [0, 0, 0, 0, 0, 0]
+    program = Program.parse(registers, data)
+    while program.ip != 28:
+        program.execute_current_instruction()
+
+    # when we hit line 28, the exit/halt condition is when r0 == r3, so r3 must be the answer
+    answer = registers[3]
+
+    # we then check by setting our answer to be r0 and run the program again to verify that it's correct
+    program = Program.parse([answer, 0, 0, 0, 0, 0], data)
     program.execute()
 
-    return register_0
+    return answer
+
 
 def translation():
                                                  # #ip 2 (r2)
