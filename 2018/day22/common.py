@@ -44,8 +44,4 @@ class CaveSystem:
         return self.erosion_level(coord) % 3
 
     def total_risk_factor_for_initial_area(self):
-        sum = 0
-        for x in range(0, self.target[0] + 1):
-            for y in range(0, self.target[1] + 1):
-                sum += self.risk_level((x, y))
-        return sum
+        return sum(self.risk_level((x, y)) for x in range(self.target[0] + 1) for y in range(self.target[1] + 1))
