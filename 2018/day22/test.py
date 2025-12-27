@@ -1,7 +1,7 @@
 import textwrap
 import unittest
 
-import day22.part01
+from day22 import part01, part02
 
 
 class D22Tests(unittest.TestCase):
@@ -13,11 +13,10 @@ class D22Tests(unittest.TestCase):
     )
 
     def test_part1(self):
-        self.assertEqual(114, day22.part01.run(self.INPUT))
+        self.assertEqual(114, part01.run(self.INPUT))
 
-
-    # def test_part2(self):
-    #     pass
+    def test_part2(self):
+        self.assertEqual(45, part02.run(self.INPUT))
 
 
 if __name__ == '__main__':
