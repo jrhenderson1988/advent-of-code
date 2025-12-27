@@ -25,8 +25,8 @@ class CaveSystem:
         target = tuple(map(int, lines[1][len("target:"):].strip().split(",")))
         return CaveSystem(depth, target)
 
-    def risk_level(self):
-        return 0
+    def risk_level(self, coord):
+        return self.erosion_level(coord) % 3
 
     @cache
     def erosion_level(self, coord):
@@ -48,9 +48,6 @@ class CaveSystem:
             return coord[1] * 48271
         # Otherwise, the region's geologic index is the result of multiplying the erosion levels of the regions at X-1,Y and X,Y-1.
         return self.erosion_level((coord[0] - 1, coord[1])) * self.erosion_level((coord[0], coord[1] - 1))
-
-    def risk_level(self, coord):
-        return self.erosion_level(coord) % 3
 
     def total_risk_factor_for_initial_area(self):
         return sum(self.risk_level((x, y)) for x in range(self.target[0] + 1) for y in range(self.target[1] + 1))
@@ -110,9 +107,17 @@ class CaveSystem:
             elif area_type == self.NARROW and (tool == self.TORCH or tool == self.NEITHER):
                 next_moves.append((((x, y), tool), 1))
 
+        current_area_type = self.risk_level(coord)
         for next_tool in [self.CLIMBING_GEAR, self.TORCH, self.NEITHER]:
             if next_tool == tool:
                 continue
+            if next_tool == self.CLIMBING_GEAR and current_area_type == self.NARROW:
+                continue
+            if next_tool == self.TORCH and current_area_type == self.WET:
+                continue
+            if next_tool == self.NEITHER and current_area_type == self.ROCKY:
+                continue
+
             next_moves.append(((coord, next_tool), 7))
 
         return next_moves
