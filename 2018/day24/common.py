@@ -22,9 +22,43 @@ class Battle:
         army_name = lines[0].strip()[0:-1].lower().replace(' ', '_')
         return [Group.parse(lines[i], army_name, i) for i in range(1, len(lines))]
 
-    def fight(self):
-        groups = [g.clone() for g in self.groups]
+    def units_remaining_after_minimum_required_immune_system_boost(self):
+        prev_boost = 0
+        boost = 1000
 
+        found_immune_system_win = False
+        while True:
+            print("boost: %d (prev boost: %d)" % (boost, prev_boost))
+            curr_remaining, curr_winner = self.fight_with_immune_system_boost(boost)
+            prev_remaining, prev_winner = self.fight_with_immune_system_boost(boost - 1)
+            if curr_winner == 'immune_system' and prev_winner == 'infection':
+                return curr_remaining
+
+            if not found_immune_system_win and curr_winner == 'infection':
+                # we have not yet found an immune system win, keep doubling the boost until we find one
+                prev_boost = boost
+                boost *= 2
+            elif not found_immune_system_win and curr_winner == 'immune_system':
+                # we've encountered an immune system win for the first time with ou doubling boosts, so now we have our
+                # range in which to binary search (somewhere between the previous boost and current boost)
+                print("found immune system at %d" % boost)
+                found_immune_system_win = True
+            else:
+                # now we're in the binary search territory since we've found an immune system win, we need to keep
+                # trying boosts between the current boost and the previous boost until we hit our exit condition
+                diff = max(boost, prev_boost) - min(boost, prev_boost)
+                step = diff // 2
+                prev_boost = boost
+                if curr_winner == 'immune_system':
+                    # we need to go lower
+                    boost -= step
+                elif curr_winner == 'infection':
+                    boost += step
+
+    def fight_with_immune_system_boost(self, boost):
+        return self.fight_with_groups([g.clone_with_boost(boost) if g.is_immune_system() else g.clone() for g in self.groups])
+
+    def fight_with_groups(self, groups):
         while not self.is_concluded(groups):
             targets = self.select_targets(groups)
             attack_order = [(g.army_name, g.id) for g in sorted(groups, key=lambda x: x.initiative, reverse=True)]
@@ -36,7 +70,13 @@ class Battle:
                     groups = [self.attack(attacker, g) if self.is_target(g, target_details) else g.clone()
                               for g in groups]
 
-        return max(self.remaining_units_by_army(groups).values())
+        for army, remaining in self.remaining_units_by_army(groups).items():
+            if remaining > 0:
+                return remaining, army
+        return 0, None
+
+    def fight(self):
+        return self.fight_with_groups([g.clone() for g in self.groups])
 
     @staticmethod
     def print_health_status(label, groups):
@@ -148,6 +188,9 @@ class Group:
     def is_enemy(self, other):
         return not self.is_friendly(other)
 
+    def is_immune_system(self):
+        return self.army_name == 'immune_system'
+
     def global_identifier(self):
         return "%s/%d" % (self.army_name, self.id)
 
@@ -237,6 +280,11 @@ class Group:
     def clone_with_total_units(self, total_units):
         cloned = self.clone()
         cloned.total_units = total_units
+        return cloned
+
+    def clone_with_boost(self, boost):
+        cloned = self.clone()
+        cloned.attack_power += boost
         return cloned
 
     def __repr__(self):

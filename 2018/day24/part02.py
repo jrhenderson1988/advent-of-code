@@ -3,5 +3,4 @@ from day24.common import Battle
 
 def run(content):
     battle = Battle.parse(content)
-    remaining, _winner = battle.fight()
-    return remaining
+    return battle.units_remaining_after_minimum_required_immune_system_boost()
