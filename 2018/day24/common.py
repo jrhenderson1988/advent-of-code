@@ -22,27 +22,30 @@ class Battle:
         army_name = lines[0].strip()[0:-1].lower().replace(' ', '_')
         return [Group.parse(lines[i], army_name, i) for i in range(1, len(lines))]
 
+    # Not used any more
     def units_remaining_after_minimum_required_immune_system_boost(self):
         prev_boost = 0
         boost = 1000
 
         found_immune_system_win = False
         while True:
-            print("boost: %d (prev boost: %d)" % (boost, prev_boost))
             curr_remaining, curr_winner = self.fight_with_immune_system_boost(boost)
             prev_remaining, prev_winner = self.fight_with_immune_system_boost(boost - 1)
-            if curr_winner == 'immune_system' and prev_winner == 'infection':
+            if curr_winner == 'immune_system' and (prev_winner == 'infection' or prev_winner is None):
                 return curr_remaining
 
-            if not found_immune_system_win and curr_winner == 'infection':
-                # we have not yet found an immune system win, keep doubling the boost until we find one
-                prev_boost = boost
-                boost *= 2
-            elif not found_immune_system_win and curr_winner == 'immune_system':
-                # we've encountered an immune system win for the first time with ou doubling boosts, so now we have our
-                # range in which to binary search (somewhere between the previous boost and current boost)
-                print("found immune system at %d" % boost)
-                found_immune_system_win = True
+            if not found_immune_system_win:
+                if curr_winner == 'immune_system':
+                    # we've encountered an immune system win for the first time with our doubling boosts, so now we have
+                    # our range in which to binary search (somewhere between the previous boost and current boost)
+                    found_immune_system_win = True
+                elif curr_winner == 'infection' or curr_winner is None:
+                    # we have not yet found an immune system win, keep doubling the boost until we find one
+                    prev_boost = boost
+                    boost *= 2
+                else:
+                    # This should not happen, unless we have bugs somewhere
+                    raise Exception("No winner at boost %d" % boost)
             else:
                 # now we're in the binary search territory since we've found an immune system win, we need to keep
                 # trying boosts between the current boost and the previous boost until we hit our exit condition
@@ -52,14 +55,25 @@ class Battle:
                 if curr_winner == 'immune_system':
                     # we need to go lower
                     boost -= step
-                elif curr_winner == 'infection':
+                elif curr_winner == 'infection' or curr_winner is None:
                     boost += step
 
+    def fight_until_immune_system_wins(self):
+        boost = 1
+        while True:
+            remaining, winner = self.fight_with_immune_system_boost(boost)
+            if winner == 'immune_system':
+                return remaining
+            boost += 1
+
+
     def fight_with_immune_system_boost(self, boost):
-        return self.fight_with_groups([g.clone_with_boost(boost) if g.is_immune_system() else g.clone() for g in self.groups])
+        return self.fight_with_groups(
+            [g.clone_with_boost(boost) if g.is_immune_system() else g.clone() for g in self.groups])
 
     def fight_with_groups(self, groups):
         while not self.is_concluded(groups):
+            groups_at_start_of_fight = [g.clone() for g in groups]
             targets = self.select_targets(groups)
             attack_order = [(g.army_name, g.id) for g in sorted(groups, key=lambda x: x.initiative, reverse=True)]
             for attacker_identifier in attack_order:
@@ -70,6 +84,11 @@ class Battle:
                     groups = [self.attack(attacker, g) if self.is_target(g, target_details) else g.clone()
                               for g in groups]
 
+            # account for when there's no winner (due to immunities) - i.e. if no damage was dealt in a round then no
+            # army wins
+            if sum([g.total_units for g in groups_at_start_of_fight]) == sum([g.total_units for g in groups]):
+                return 0, None
+
         for army, remaining in self.remaining_units_by_army(groups).items():
             if remaining > 0:
                 return remaining, army
@@ -77,12 +96,6 @@ class Battle:
 
     def fight(self):
         return self.fight_with_groups([g.clone() for g in self.groups])
-
-    @staticmethod
-    def print_health_status(label, groups):
-        print(label)
-        for g in groups:
-            print(g.health_info())
 
     @staticmethod
     def is_target(group, target_details):
@@ -95,10 +108,6 @@ class Battle:
         units_killed = damage // target.unit_hit_points
         new_total_units = max(target.total_units - units_killed, 0)
         attacked_target = target.clone_with_total_units(new_total_units)
-        # print("> ATTACK: %s -> %s (%d units killed with %d damage)" % (attacker.health_info(),
-        #                                                              attacked_target.health_info(),
-        #                                                              target.total_units - attacked_target.total_units,
-        #                                                              damage))
         return attacked_target
 
     @staticmethod
